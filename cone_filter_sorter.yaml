@@ -1,0 +1,14 @@
+map_topic: "/map"
+pose_topic: "/pose"
+filtered_map_topic: "/sorted_map"
+
+use_quadratic: false
+
+max_allowed_time_difference: 0.05
+
+crop_box_y_max: 500
+crop_box_x_min: -500
+crop_box_x_max: 500
+
+min_heading_difference: 0
+max_heading_difference: 3.14
