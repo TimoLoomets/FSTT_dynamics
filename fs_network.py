@@ -35,6 +35,9 @@ EPISODES = 100
 AGGREGATE_STATS_EVERY = 10  # episodes
 SHOW_PREVIEW = True
 
+OUTPUT_2D_SHAPE = (10, 3)  # throttle, steering, quality
+OUTPUT_1D_SHAPE = 30
+
 
 class Car:
     def __init__(self, x, y, phi):
@@ -149,7 +152,7 @@ class FSEnv:
         self.car = None
         self.OBSERVATION_SPACE_VALUES = (6, 2)  # Linear speed and angular speed and then 5 Point Pairs
         self.TIME_STEP = 0.1
-        self.ACTION_SPACE_SIZE = 10 * 3#(10, 3)  # throttle, steering, quality triplets # 20 * 20  # throttle and steering
+        self.ACTION_SPACE_SIZE = OUTPUT_1D_SHAPE  # (10, 3)  # throttle, steering, quality triplets # 20 * 20  # throttle and steering
 
         self.size = 100
         self.img = np.zeros((700, 700, 3), np.uint8)
@@ -421,14 +424,15 @@ class DQNAgent:
 
             # If not a terminal state, get new q from future states, otherwise set it to 0
             # almost like with Q Learning, but we use just part of equation here
+            future_qs = np.reshape(future_qs_list[index], OUTPUT_2D_SHAPE)
             if not done:
-                max_future_q = np.max(future_qs_list[index][:, 2])
+                max_future_q = np.max(future_qs[:, 2])
                 new_q = reward + DISCOUNT * max_future_q
             else:
                 new_q = reward
 
             # Update Q value for given state
-            current_qs = current_qs_list[index]
+            current_qs = np.reshape(current_qs_list[index], OUTPUT_2D_SHAPE)
             current_actions = current_qs[:, :2]
             current_qualities = current_qs[:, 2]
 
@@ -446,7 +450,7 @@ class DQNAgent:
 
             # And append to our training data
             x.append(current_state)
-            y.append(current_qs)
+            y.append(np.reshape(current_qs, OUTPUT_1D_SHAPE))
 
         # print("x:", x)
         # print("y:", y)
