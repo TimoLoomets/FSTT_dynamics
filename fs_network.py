@@ -16,12 +16,13 @@ from math import sin, cos, pi
 from os import path, getcwd, makedirs
 
 from cone_filter_sorter_node import ConeFilterNode
+from interpolator import Interpolator
 
 DISCOUNT = 0.99
 
 REPLAY_MEMORY_SIZE = 50_000
 MIN_REPLAY_MEMORY_SIZE = 1_000
-MODEL_NAME = "256x2"
+MODEL_NAME = "RELUx3"
 MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 5  # Terminal states (end of episodes)
 MIN_REWARD = -200
@@ -69,6 +70,14 @@ class Car:
     @property
     def location(self):
         return self._x / FSEnv.pixels_per_meter, self._y / FSEnv.pixels_per_meter
+
+    @property
+    def angular_speed_value(self):
+        return self.omega
+
+    @property
+    def linear_speed_value(self):
+        return self.speed
 
     def rotate_point(self, x, y):
         x_ = x * cos(self.phi) - y * sin(self.phi)
@@ -138,9 +147,9 @@ class FSEnv:
         self.OOB_PENALTY = 100
         self.episode_step = 0
         self.car = None
-        self.OBSERVATION_SPACE_VALUES = (5, 2)  # 5 Pairs
+        self.OBSERVATION_SPACE_VALUES = (6, 2)  # Linear speed and angular speed and then 5 Point Pairs
         self.TIME_STEP = 0.1
-        self.ACTION_SPACE_SIZE = 20 * 20  # throttle and steering
+        self.ACTION_SPACE_SIZE = 10 * 3#(10, 3)  # throttle, steering, quality triplets # 20 * 20  # throttle and steering
 
         self.size = 100
         self.img = np.zeros((700, 700, 3), np.uint8)
@@ -276,8 +285,8 @@ class FSEnv:
 
     def step(self, action):
         self.episode_step += 1
-        throttle = (action % 20 - 10) / 10.0
-        steering = (action // 20 - 10) / 10.0
+        throttle = action[0]  # (action % 20 - 10) / 10.0
+        steering = action[1]  # (action // 20 - 10) / 10.0
         self.car.update(self.TIME_STEP, (throttle, steering))
 
         if self.check_track():
@@ -352,7 +361,11 @@ class DQNAgent:
     @staticmethod
     def create_model():
         model = Sequential()
+        model.add(Dense(128, activation='relu', input_shape=env.OBSERVATION_SPACE_VALUES))
+        model.add(Dense(64, activation='relu'))
+        model.add(Dense(64, activation='relu'))
 
+        '''
         model.add(Conv1D(256, 2,
                          input_shape=env.OBSERVATION_SPACE_VALUES))  # OBSERVATION_SPACE_VALUES = (10, 10, 3) a 10x10 RGB image.
         model.add(Activation('relu'))
@@ -366,6 +379,7 @@ class DQNAgent:
 
         model.add(Flatten())  # this converts our 3D feature maps to 1D feature vectors
         model.add(Dense(64))
+        '''
 
         model.add(Dense(env.ACTION_SPACE_SIZE, activation='softmax'))  # ACTION_SPACE_SIZE = how many choices (9)
         model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
@@ -400,6 +414,7 @@ class DQNAgent:
 
         x = []
         y = []
+        interpolator = Interpolator()
 
         # Now we need to enumerate our batches
         for index, (current_state, action, reward, new_current_state, done) in enumerate(minibatch):
@@ -407,17 +422,27 @@ class DQNAgent:
             # If not a terminal state, get new q from future states, otherwise set it to 0
             # almost like with Q Learning, but we use just part of equation here
             if not done:
-                max_future_q = np.max(future_qs_list[index])
+                max_future_q = np.max(future_qs_list[index][:, 2])
                 new_q = reward + DISCOUNT * max_future_q
             else:
                 new_q = reward
 
             # Update Q value for given state
             current_qs = current_qs_list[index]
+            current_actions = current_qs[:, :2]
+            current_qualities = current_qs[:, 2]
+
+            interpolator.set_u(current_actions)
+            interpolator.set_q(current_qualities)
+            interpolator.update_function(action, new_q)
+            current_qs = np.zeros((10, 3))
+            current_qs[:, :2] = interpolator.get_u()
+            current_qs[:, 2] = interpolator.get_q()
+
             # print(current_state)
             # print(current_qs_list)
             # print(action)
-            current_qs[action] = new_q
+            # current_qs[action] = new_q
 
             # And append to our training data
             x.append(current_state)
@@ -470,10 +495,14 @@ if __name__ == "__main__":
         while not done:
             if np.random.random() > epsilon:
                 # Get action from Q table
-                action = np.argmax(agent.get_qs(current_state))
+                action_qualities = agent.get_qs(current_state)
+                qualities = action_qualities[:, 2]
+                best_index = np.argmax(qualities)
+                action = action_qualities[best_index][:2]
             else:
                 # Get random action
-                action = np.random.randint(0, env.ACTION_SPACE_SIZE)  # np.array(act, dtype=dt)
+                action = np.array([random.random() * 2 - 1,
+                                   random.random() * 2 - 1])  # np.random.randint(0, env.ACTION_SPACE_SIZE)  # np.array(act, dtype=dt)
 
             new_state, reward, done = env.step(action)
 
