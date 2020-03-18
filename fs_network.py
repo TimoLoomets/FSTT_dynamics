@@ -32,7 +32,7 @@ EPSILON_DECAY = 0.99975
 MIN_EPSILON = 0.001
 
 EPISODES = 100
-EPISODE_LENGTH = 500
+EPISODE_LENGTH = 1000
 AGGREGATE_STATS_EVERY = 10  # episodes
 SHOW_PREVIEW = True
 
@@ -402,7 +402,7 @@ class DQNAgent:
 
     # Queries main network for Q values given current observation space (environment state)
     def get_qs(self, state):
-        return self.model.predict(np.array(state).reshape(-1, *state.shape) / 255)[0]
+        return np.reshape(self.model.predict(np.array(state).reshape(-1, *state.shape) / 255)[0], OUTPUT_2D_SHAPE)
 
     # Trains main network every step during episode
     def train(self, terminal_state, step):
