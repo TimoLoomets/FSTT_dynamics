@@ -32,6 +32,7 @@ EPSILON_DECAY = 0.99975
 MIN_EPSILON = 0.001
 
 EPISODES = 100
+EPISODE_LENGTH = 500
 AGGREGATE_STATS_EVERY = 10  # episodes
 SHOW_PREVIEW = True
 
@@ -303,7 +304,7 @@ class FSEnv:
         new_observation = self.get_observations()
 
         done = False
-        if reward == -self.OOB_PENALTY or self.episode_step >= 6000:
+        if reward == -self.OOB_PENALTY or self.episode_step >= EPISODE_LENGTH:
             done = True
 
         return new_observation, reward, done
@@ -365,6 +366,7 @@ class DQNAgent:
     def create_model():
         model = Sequential()
         model.add(Dense(128, activation='relu', input_shape=env.OBSERVATION_SPACE_VALUES))
+        model.add(Flatten())
         model.add(Dense(64, activation='relu'))
         model.add(Dense(64, activation='relu'))
 
@@ -386,6 +388,11 @@ class DQNAgent:
 
         model.add(Dense(env.ACTION_SPACE_SIZE, activation='softmax'))  # ACTION_SPACE_SIZE = how many choices (9)
         model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
+
+        for layer in model.layers:
+            print(layer.output_shape)
+        model.summary()
+
         return model
 
     # Adds step's data to a memory replay array
