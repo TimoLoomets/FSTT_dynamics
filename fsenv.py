@@ -1,0 +1,195 @@
+import numpy as np
+from collections import deque
+from math import sin, cos, pi
+import cv2
+import yaml
+from os import path
+
+from car import Car
+from constants import *
+from cone_filter_sorter_node import ConeFilterNode
+
+
+class FSEnv:
+
+
+    def __init__(self):
+        self.STEP_PENALTY = 1
+        self.CHECKPOINT_REWARD = 50
+        self.OOB_PENALTY = 100
+        self.episode_step = 0
+        self.car = None
+        self.OBSERVATION_SPACE_VALUES = INPUT_2D_SHAPE  # Linear speed and angular speed and then 5 Point Pairs
+        self.TIME_STEP = 0.1
+        self.ACTION_SPACE_SIZE = OUTPUT_1D_SHAPE  # (10, 3)  # throttle, steering, quality triplets # 20 * 20  # throttle and steering
+
+        self.size = 100
+        self.img = np.zeros((700, 700, 3), np.uint8)
+        self.track = {}
+        self.time_factor = 1
+        self.sorter = ConeFilterNode()
+        self.center_points = []
+        self.checkpoints = deque()
+
+        self.load_track()
+        self.car = Car(self.track["starting_pose_front_wing"][0], self.track["starting_pose_front_wing"][1],
+                       self.track["starting_pose_front_wing"][2] + pi / 2)
+        self.calculate_center_line()
+
+        self.reset()
+
+    def clear(self):
+        self.img = np.zeros((700, 700, 3), np.uint8)
+
+    @staticmethod
+    def point_to_coord(point):
+        return round(PIXELS_PER_METER * point[0]) + OFFSET_X, round(
+            PIXELS_PER_METER * point[1]) + OFFSET_Y
+
+    @staticmethod
+    def line_intersection(line1, line2):
+        xdiff = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
+        ydiff = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
+
+        def det(a, b):
+            return a[0] * b[1] - a[1] * b[0]
+
+        div = det(xdiff, ydiff)
+        if div == 0:
+            raise Exception('lines do not intersect')
+
+        d = (det(*line1), det(*line2))
+        x = det(d, xdiff) / div
+        y = det(d, ydiff) / div
+        return x, y
+
+    def draw_cone(self, cone, color):
+        center = cone
+        cv2.circle(self.img, center, 2, color, -1)
+
+    def draw_car(self):
+        pts = np.array(self.car.get_points(), np.int32)
+        pts = pts.reshape((-1, 1, 2))
+        cv2.polylines(self.img, [pts], True, (0, 0, 255))
+
+    def check_track(self):
+        corners = self.car.get_corners()
+        area = self.car.area
+        for cone in self.track["cones_left"]:
+            if self.point_in_rectangle(cone, corners, area):
+                return True
+        for cone in self.track["cones_right"]:
+            if self.point_in_rectangle(cone, corners, area):
+                return True
+        return False
+
+    def check_checkpoints(self):
+        corners = self.car.get_corners()
+        area = self.car.area
+        for i in range(2):
+            if self.point_in_rectangle(self.checkpoints[i], corners, area):
+                for j in range(i + 1):
+                    self.checkpoints.popleft()
+                break
+
+    @staticmethod
+    def triangle_area(a, b, c):
+        return abs((b[0] * a[1] - a[0] * b[1]) + (c[0] * b[1] - b[0] * c[1]) + (a[0] * c[1] - c[0] * a[1])) / 2
+
+    @staticmethod
+    def point_in_rectangle(point, rectangle, rectangle_area):
+        total_area = 0
+        for i in range(len(rectangle)):
+            total_area += FSEnv.triangle_area(point, rectangle[i], rectangle[i - 1])
+        return abs(total_area - rectangle_area) < 0.001
+
+    def load_track(self):
+        self.track = yaml.load(open(path.join('FSG.yaml'), 'r'), Loader=yaml.FullLoader)
+        print(self.track)
+
+    def calculate_center_line(self):
+        self.sorter.pose_update(self.car)
+        sorted_pairs = self.sorter.map_update((self.track["cones_right"], self.track["cones_left"]))
+        print("yellows:", sorted_pairs.yellowCones)
+        print("blues:", sorted_pairs.blueCones)
+        # print(len(sorted_pairs.yellowCones), len(sorted_pairs.blueCones))
+        for i in range(len(sorted_pairs.yellowCones)):
+            left_cone = sorted_pairs.blueCones[i]
+            right_cone = sorted_pairs.yellowCones[i]
+            self.center_points.append(((left_cone.x + right_cone.x) / 2, (left_cone.y + right_cone.y) / 2))
+
+    def draw_track(self):
+        last_cone = None
+        for cone in self.track["cones_left"]:
+            cone = FSEnv.point_to_coord(cone)
+            self.draw_cone(cone, (255, 0, 0))
+            if last_cone is not None:
+                cv2.line(self.img, last_cone, cone, (255, 0, 0), 1)
+            last_cone = cone
+        last_cone = None
+        for cone in self.track["cones_right"]:
+            cone = FSEnv.point_to_coord(cone)
+            self.draw_cone(cone, (0, 255, 255))
+            if last_cone is not None:
+                cv2.line(self.img, last_cone, cone, (0, 255, 255), 1)
+            last_cone = cone
+
+        last_cone = None
+        # col = 255
+        for cone in self.checkpoints:
+            cone = FSEnv.point_to_coord(cone)
+            self.draw_cone(cone, (0, 255, 0))
+            # col = round(0.98 * col)
+            if last_cone is not None:
+                cv2.line(self.img, last_cone, cone, (0, 255, 0), 1)
+            last_cone = cone
+
+    def reset(self):
+        self.car = Car(self.track["starting_pose_front_wing"][0], self.track["starting_pose_front_wing"][1],
+                       self.track["starting_pose_front_wing"][2] - pi / 2)
+        self.checkpoints = deque(self.center_points)
+        return self.get_observations()
+
+    def get_observations(self):
+        observations = list(self.checkpoints)[:5]
+        output = [(self.car.linear_speed_value, self.car.angular_speed_value)]
+        for point in observations:
+            loc = self.car.location
+            phi = self.car.phi
+            x = point[0] - loc[0]
+            y = point[1] - loc[1]
+            x_ = x * cos(phi) - y * sin(phi)
+            y_ = x * sin(phi) + y * cos(phi)
+            output.append((x_, y_))
+
+        dt = np.dtype('float')
+        return np.array(output, dtype=dt)
+
+    def render(self):
+        self.clear()
+        self.draw_track()
+        self.draw_car()
+        cv2.imshow('image', self.img)
+        cv2.waitKey(40)  # int(1000 * self.TIME_STEP))
+
+    def step(self, action):
+        self.episode_step += 1
+        throttle = action[0]  # (action % 20 - 10) / 10.0
+        steering = action[1]  # (action // 20 - 10) / 10.0
+        self.car.update(self.TIME_STEP, (throttle, steering))
+
+        if self.check_track():
+            reward = -self.OOB_PENALTY
+            self.reset()
+        elif self.check_checkpoints():
+            reward = self.CHECKPOINT_REWARD
+        else:
+            reward = -self.STEP_PENALTY
+
+        new_observation = self.get_observations()
+
+        done = False
+        if reward == -self.OOB_PENALTY or self.episode_step >= EPISODE_LENGTH:
+            done = True
+
+        return new_observation, reward, done
