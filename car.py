@@ -1,6 +1,7 @@
 from math import sin, cos
 from constants import *
 
+
 class Car:
     def __init__(self, x, y, phi):
         self._x = x
@@ -9,39 +10,39 @@ class Car:
 
         self._width = 0.8
         self._height = 1.5
-        self.width = PIXELS_PER_METER * self._width
-        self.height = PIXELS_PER_METER * self._height
+        # self.width = PIXELS_PER_METER * self._width
+        # self.height = PIXELS_PER_METER * self._height
         self.speed = 0
         self.omega = 0
         self.speed_max = 32
         self.a_max = 7.7
 
     @property
-    def x(self):
+    def x(self):  # m
         return self._x
 
     @property
-    def y(self):
+    def y(self):  # m
         return self._y
 
     @property
-    def phi(self):
+    def phi(self):  # rad
         return self._phi
 
     @property
-    def area(self):
+    def area(self):  # m^2
         return self._width * self._height
 
     @property
-    def location(self):
+    def location(self):  # meters
         return self._x / PIXELS_PER_METER, self._y / PIXELS_PER_METER
 
     @property
-    def angular_speed_value(self):
+    def angular_speed_value(self):  # rad/s
         return self.omega
 
     @property
-    def linear_speed_value(self):
+    def linear_speed_value(self):  # m/s
         return self.speed
 
     def rotate_point(self, x, y):
@@ -49,18 +50,26 @@ class Car:
         y_ = x * sin(self.phi) + y * cos(self.phi)
         return x_, y_
 
-    def get_corners(self):
+    def get_corners(self, multiplier=1) -> list:
         points = [
-            self.rotate_point(-self._width / 2, -self._height / 2),
-            self.rotate_point(-self._width / 2, self._height / 2),
-            self.rotate_point(self._width / 2, self._height / 2),
-            self.rotate_point(self._width / 2, -self._height / 2)
+            self.rotate_point(-self._width * multiplier / 2, -self._height * multiplier / 2),
+            self.rotate_point(-self._width * multiplier / 2, self._height * multiplier / 2),
+            self.rotate_point(self._width * multiplier / 2, self._height * multiplier / 2),
+            self.rotate_point(self._width * multiplier / 2, -self._height * multiplier / 2)
         ]
         for i in range(len(points)):
             points[i] = (
-                points[i][0] + self._x / PIXELS_PER_METER, points[i][1] + self._y / PIXELS_PER_METER)
+                points[i][0] + self._x * multiplier, points[i][1] + self._y * multiplier)
         return points
 
+    def get_edges(self):
+        corners = self.get_corners()
+        edges = []
+        for corner_index in range(len(corners)):
+            edges.append((corners[corner_index - 1], corners[corner_index]))
+        return edges
+
+    '''
     def get_points(self):
         points = [
             self.rotate_point(-self.width / 2, -self.height / 2),
@@ -71,6 +80,7 @@ class Car:
         for i in range(len(points)):
             points[i] = (points[i][0] + self._x + OFFSET_X, points[i][1] + self._y + OFFSET_Y)
         return points
+    '''
 
     def move(self, distance):
         movement = self.rotate_point(0, distance)
@@ -87,7 +97,7 @@ class Car:
 
         half_angle = self.omega / 2 * t
         self.rotate(half_angle)
-        self.move(self.speed * t * PIXELS_PER_METER)
+        self.move(self.speed * t)
         self.rotate(half_angle)
 
         self.speed *= 0.99

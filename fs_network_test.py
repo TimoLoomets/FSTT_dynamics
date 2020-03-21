@@ -3,7 +3,7 @@ import numpy as np
 from keras.models import load_model
 from fs_network import FSEnv, DQNAgent
 
-model = load_model("models/RELUx3____-1.00max___-1.00avg___-1.00min__1584741983.model")
+model = load_model("models/RELUx3____-1.00max___-1.00avg___-1.00min__1584801368.model")
 model.summary()
 for layer in model.layers:
     print(layer.input_shape, "=>", layer.output_shape)
@@ -21,4 +21,4 @@ while True:
 
     env.step(action)
 
-    env.render()
+    #env.render()
