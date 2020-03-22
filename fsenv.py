@@ -15,7 +15,7 @@ class FSEnv:
     def __init__(self):
         self.STEP_PENALTY = 1
         self.CHECKPOINT_REWARD = 50
-        self.OOB_PENALTY = 100
+        self.OOB_PENALTY = 20
         self.episode_step = 0
         self.car = None
         self.OBSERVATION_SPACE_VALUES = INPUT_2D_SHAPE  # Linear speed and angular speed and then 5 Point Pairs
@@ -104,7 +104,8 @@ class FSEnv:
             if self.point_in_rectangle(self.checkpoints[i], corners, area):
                 for j in range(i + 1):
                     self.checkpoints.popleft()
-                break
+                return True
+        return False
 
     def load_track(self):
         self.track = yaml.load(open(path.join('FSG.yaml'), 'r'), Loader=yaml.FullLoader)
@@ -152,6 +153,7 @@ class FSEnv:
             self.reset()
         elif self.check_checkpoints():
             reward = self.CHECKPOINT_REWARD
+            # print("HIT CHECKPOINT")
         else:
             reward = -self.STEP_PENALTY
 
@@ -162,4 +164,5 @@ class FSEnv:
             done = True
 
         self.visualizer.render(self.track, self.checkpoints, self.car)
+        #print("reward", reward)
         return new_observation, reward, done
