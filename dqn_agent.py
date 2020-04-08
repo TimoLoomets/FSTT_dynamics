@@ -9,7 +9,7 @@ import numpy as np
 from constants import *
 from modified_tensor_board import ModifiedTensorBoard
 from interpolator import Interpolator
-
+from output_visualizer import OutputVisualizer
 
 class DQNAgent:
     def __init__(self):
@@ -28,6 +28,9 @@ class DQNAgent:
 
         # Used to count when to update target network with main network's weights
         self.target_update_counter = 0
+
+        # Visualization
+        self.output_visualizer = OutputVisualizer()
 
     @staticmethod
     def create_model():
@@ -69,7 +72,9 @@ class DQNAgent:
 
     # Queries main network for Q values given current observation space (environment state)
     def get_qs(self, state):
-        return np.reshape(self.model.predict(np.array(state).reshape(-1, *state.shape) / 255)[0], OUTPUT_2D_SHAPE)
+        output = np.reshape(self.model.predict(np.array(state).reshape(-1, *state.shape))[0], OUTPUT_2D_SHAPE)
+        self.output_visualizer.render(output)
+        return output
 
     # Trains main network every step during episode
     def train(self, terminal_state, step):

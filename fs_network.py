@@ -10,7 +10,7 @@ from fsenv import FSEnv
 from dqn_agent import DQNAgent
 from constants import *
 
-epsilon = 1
+epsilon = 0.5
 
 if __name__ == "__main__":
     start_time = time.time()

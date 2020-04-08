@@ -7,15 +7,15 @@ from os import path
 from car import Car
 from constants import *
 from cone_filter_sorter_node import ConeFilterNode
-from visualizer import Visualizer
+from simulator_visualizer import SimulatorVisualizer
 
 
 class FSEnv:
 
     def __init__(self):
         self.STEP_PENALTY = 1
-        self.CHECKPOINT_REWARD = 50
-        self.OOB_PENALTY = 20
+        self.CHECKPOINT_REWARD = 20
+        self.OOB_PENALTY = 200
         self.episode_step = 0
         self.car = None
         self.OBSERVATION_SPACE_VALUES = INPUT_2D_SHAPE  # Linear speed and angular speed and then 5 Point Pairs
@@ -29,7 +29,7 @@ class FSEnv:
         self.sorter = ConeFilterNode()
         self.center_points = []
         self.checkpoints = deque()
-        self.visualizer = Visualizer()
+        self.visualizer = SimulatorVisualizer()
 
         self.load_track()
         self.car = Car(self.track["starting_pose_front_wing"][0], self.track["starting_pose_front_wing"][1],

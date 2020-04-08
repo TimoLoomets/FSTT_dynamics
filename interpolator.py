@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from mpl_toolkits import mplot3d
+import math
 
 
 class Interpolator:
@@ -37,7 +38,11 @@ class Interpolator:
         return output
 
     def get_quality(self, action):
-        return self.wsum(action) / self.norm(action)
+        value = self.wsum(action) / self.norm(action)
+        if math.isnan(value):
+            return 0
+        else:
+            return value
 
     def update_function(self, action, quality):
         q = np.array(self.qualities)
@@ -106,7 +111,7 @@ if __name__ == "__main__":
     # print(interpolator.get_quality(np.array([0.75, 0])))
 
     fig = plt.figure()
-    ax = plt.axes(projection="3d")
+    ax = plt.axes()  # projection="3d")
 
     X = []
     Y = []
@@ -118,8 +123,8 @@ if __name__ == "__main__":
             Z.append(interpolator.get_quality(np.array([throttle, steering])))
     # ax.plot_trisurf(np.array(X), np.array(Y), np.array(Z), cmap=cm.bwr)
 
-    throttles = [a[0] for a in u]
-    steerings = [a[1] for a in u]
+    # throttles = [a[0] for a in u]
+    # steerings = [a[1] for a in u]
     # ax.plot_trisurf(np.array(throttles), np.array(steerings), np.array(q))
 
     interpolator.update_function(np.array([1, 0]), 2)
@@ -141,9 +146,9 @@ if __name__ == "__main__":
     '''
 
     u = interpolator.get_u()
-    q = interpolator.get_q()
-    throttles = [a[0] for a in u]
-    steerings = [a[1] for a in u]
-    ax.plot_trisurf(np.array(throttles), np.array(steerings), np.array(q), cmap=cm.bwr)
+    q = np.reshape(interpolator.get_q(), (-1, 5))
+    throttles = np.reshape([a[0] for a in u], (-1, 5))
+    steerings = np.reshape([a[1] for a in u], (-1, 5))
+    ax.contourf(np.array(throttles), np.array(steerings), np.array(q), cmap=cm.bwr)
 
     plt.show()
