@@ -48,26 +48,6 @@ class OutputVisualizer:
         return X, Y, Z
 
     def draw_output(self, output):
-        throttles, steering, qualities = self.iterate(output)
-        throttles = np.reshape(throttles, (-1, 7))
-        steerings = np.reshape(steering, (-1, 7))
-        qualities = np.reshape(qualities, (-1, 7))
-
-        ax = plt.axes()
-        ax.contourf(np.array(throttles), np.array(steerings), np.array(qualities), cmap=cm.bwr)
-        # ax.set_ylim([-1, 1])
-        # ax.set_xlim([-1, 1])
-
-        canvas = plt.gcf().canvas
-        canvas.draw()
-        w, h = canvas.get_width_height()
-        buf = np.fromstring(canvas.tostring_argb(), dtype=np.uint8)
-        buf.shape = (h, w, 4)
-        self.img = cv2.cvtColor(np.roll(buf, 3, axis=2)[:, :, :3], cv2.COLOR_RGB2BGR)
-        # plt.show()
-        plt.clf()
-
-    def draw_output_2(self, output):
         u = output[:, :2]
         q = output[:, 2]
         self.interpolator.set_u(u)
@@ -80,15 +60,23 @@ class OutputVisualizer:
         for throttle in np.arange(self.DISPLAY_THROTTLE_MIN,
                                   self.DISPLAY_THROTTLE_MAX + self.DISPLAY_STEP,
                                   self.DISPLAY_STEP):
-            y = self.WIDTH * (0.5 - throttle / self.DISPLAY_THROTTLE_RANGE)
+            y = (self.WIDTH - self.DISPLAY_THROTTLE_SEGMENT_WIDTH) * (0.5 - throttle / self.DISPLAY_THROTTLE_RANGE)
             for steering in np.arange(self.DISPLAY_STEERING_MIN,
                                       self.DISPLAY_STEERING_MAX + self.DISPLAY_STEP,
                                       self.DISPLAY_STEP):
-                x = self.WIDTH * (0.5 + steering / self.DISPLAY_STEERING_RANGE)
+                x = (self.WIDTH - self.DISPLAY_STEERING_SEGMENT_WIDTH) * (0.5 + steering / self.DISPLAY_STEERING_RANGE)
 
                 X.append(int(x))
                 Y.append(int(y))
                 Z.append(self.interpolator.get_quality(np.array([throttle, steering])))
+
+        knots = []
+        for i in range(len(u)):
+            throttle = u[i][0]
+            steering = u[i][1]
+            y = int(self.WIDTH * (0.5 - throttle / self.DISPLAY_THROTTLE_RANGE))
+            x = int(self.WIDTH * (0.5 + steering / self.DISPLAY_STEERING_RANGE))
+            knots.append((x, y))
 
         min_q = min(Z)
         range_q = max(q) - min_q
@@ -107,8 +95,15 @@ class OutputVisualizer:
                           color=tuple(map(int, cv2.cvtColor(np.uint8([[[Z[i], 255, 255]]]), cv2.COLOR_HSV2BGR)[0, 0])),
                           thickness=-1)
 
+        for knot in knots:
+            cv2.circle(self.img,
+                       knot,
+                       max(int(self.DISPLAY_THROTTLE_SEGMENT_WIDTH / 5), 1),
+                       (0, 0, 0),
+                       -1)
+
     def render(self, output):
         self.clear()
-        self.draw_output_2(output)
+        self.draw_output(output)
         cv2.imshow('output', self.img)
         cv2.waitKey(40)
