@@ -73,7 +73,7 @@ class DQNAgent:
     # Queries main network for Q values given current observation space (environment state)
     def get_qs(self, state):
         output = np.reshape(self.model.predict(np.array(state).reshape(-1, *state.shape))[0], OUTPUT_2D_SHAPE)
-        self.output_visualizer.render(output)
+        self.output_visualizer.render(np.concatenate((np.array(ACTIONS), output), axis=1))
         return output
 
     # Trains main network every step during episode
@@ -105,22 +105,22 @@ class DQNAgent:
             # almost like with Q Learning, but we use just part of equation here
             future_qs = np.reshape(future_qs_list[index], OUTPUT_2D_SHAPE)
             if not done:
-                max_future_q = np.max(future_qs[:, 2])
+                max_future_q = np.max(future_qs)
                 new_q = reward + DISCOUNT * max_future_q
             else:
                 new_q = reward
 
             # Update Q value for given state
             current_qs = np.reshape(current_qs_list[index], OUTPUT_2D_SHAPE)
-            current_actions = current_qs[:, :2]
-            current_qualities = current_qs[:, 2]
+            current_actions = ACTIONS
+            current_qualities = current_qs
 
             interpolator.set_u(current_actions)
             interpolator.set_q(current_qualities)
             interpolator.update_function(action, new_q)
-            current_qs = np.zeros((10, 3))
-            current_qs[:, :2] = interpolator.get_u()
-            current_qs[:, 2] = interpolator.get_q()
+            #current_qs = np.zeros(OUTPUT_2D_SHAPE)
+            #current_qs[:, :2] = interpolator.get_u()
+            current_qs = interpolator.get_q()
 
             # print(current_state)
             # print(current_qs_list)

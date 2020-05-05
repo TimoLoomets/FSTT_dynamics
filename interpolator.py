@@ -44,7 +44,7 @@ class Interpolator:
         else:
             return value
 
-    def update_function(self, action, quality):
+    def update_function_2(self, action, quality, update_action=True):
         q = np.array(self.qualities)
 
         knot_count = len(q)
@@ -75,8 +75,18 @@ class Interpolator:
             action[it][0] = action[it][0] + error * deriv_u0[it]
             action[it][1] = action[it][1] + error * deriv_u1[it]
 
-        self.actions = action
+        if update_action:
+            self.actions = action
         self.qualities = q
+
+    def update_function(self, action, quality, update_action=True):
+        knot_count = len(self.qualities)
+
+        q_max = max(self.qualities + [quality])
+        for it in range(0, knot_count):
+            self.qualities[it] += self.e * \
+                              (quality - self.qualities[it]) \
+                              / self.distance(action, it, q_max) ** 2
 
     def set_u(self, actions):
         self.actions = actions
@@ -96,6 +106,9 @@ class Interpolator:
 
 
 if __name__ == "__main__":
+    from output_visualizer import OutputVisualizer
+    import cv2
+
     u = []
     interpolator = Interpolator()
     for i in np.arange(1, -0.1, -0.5):
@@ -105,11 +118,25 @@ if __name__ == "__main__":
          0.15, 0.25, 0.5, 0.25, 0.15,
          0, 0, 0, 0, 0]
 
+    visualizer = OutputVisualizer()
+    visualizer.render(np.append(u, [[e] for e in q], axis=1))
+    cv2.waitKey(3000)
+
     interpolator.set_q(q)
     interpolator.set_u(u)
 
-    # print(interpolator.get_quality(np.array([0.75, 0])))
+    for _ in range(5):
+        interpolator.update_function_2(np.array([0, 0]), 2)  # , update_action=False)
+    # interpolator.update_function(np.array([-1, 0]), 2)#, update_action=False)
+    # interpolator.update_function(np.array([-1, 0]), 2)#, update_action=False)
 
+    q = interpolator.get_q()
+    u = interpolator.get_u()
+    visualizer.render(np.append(u, [[e] for e in q], axis=1))
+    cv2.waitKey(3000)
+
+    # print(interpolator.get_quality(np.array([0.75, 0])))
+    '''
     fig = plt.figure()
     ax = plt.axes()  # projection="3d")
 
@@ -121,15 +148,13 @@ if __name__ == "__main__":
             X.append(throttle)
             Y.append(steering)
             Z.append(interpolator.get_quality(np.array([throttle, steering])))
+    '''
     # ax.plot_trisurf(np.array(X), np.array(Y), np.array(Z), cmap=cm.bwr)
 
     # throttles = [a[0] for a in u]
     # steerings = [a[1] for a in u]
     # ax.plot_trisurf(np.array(throttles), np.array(steerings), np.array(q))
 
-    interpolator.update_function(np.array([1, 0]), 2)
-    interpolator.update_function(np.array([1, 0]), 2)
-    interpolator.update_function(np.array([1, 0]), 2)
     # interpolator.update_function(np.array([1, 0]), 20)
     # interpolator.update_function(np.array([1, 0]), 20)
 
@@ -145,6 +170,7 @@ if __name__ == "__main__":
     ax.plot_trisurf(np.array(X), np.array(Y), np.array(Z), cmap=cm.bwr)
     '''
 
+    '''
     u = interpolator.get_u()
     q = np.reshape(interpolator.get_q(), (-1, 5))
     throttles = np.reshape([a[0] for a in u], (-1, 5))
@@ -152,3 +178,4 @@ if __name__ == "__main__":
     ax.contourf(np.array(throttles), np.array(steerings), np.array(q), cmap=cm.bwr)
 
     plt.show()
+    '''

@@ -26,13 +26,13 @@ class OutputVisualizer:
         self.HUE_RANGE = 60
 
         self.img = None
-        self.clear()
+        self._clear()
         self.interpolator = Interpolator()
 
-    def clear(self):
+    def _clear(self):
         self.img = np.zeros((self.WIDTH, self.WIDTH, 3), np.uint8)
 
-    def iterate(self, output):
+    def _iterate(self, output):
         u = output[:, :2]
         q = output[:, 2]
         self.interpolator.set_u(u)
@@ -47,7 +47,7 @@ class OutputVisualizer:
                 Z.append(self.interpolator.get_quality(np.array([throttle, steering])))
         return X, Y, Z
 
-    def draw_output(self, output):
+    def _draw_output(self, output):
         u = output[:, :2]
         q = output[:, 2]
         self.interpolator.set_u(u)
@@ -103,7 +103,7 @@ class OutputVisualizer:
                        -1)
 
     def render(self, output):
-        self.clear()
-        self.draw_output(output)
+        self._clear()
+        self._draw_output(output)
         cv2.imshow('output', self.img)
         cv2.waitKey(40)

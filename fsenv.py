@@ -155,7 +155,7 @@ class FSEnv:
             reward = self.CHECKPOINT_REWARD
             # print("HIT CHECKPOINT")
         else:
-            reward = -self.STEP_PENALTY
+            reward = -self.STEP_PENALTY + self.car.linear_speed_value
 
         new_observation = self.get_observations()
 

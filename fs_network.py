@@ -44,10 +44,10 @@ if __name__ == "__main__":
         while not done:
             if np.random.random() > epsilon:
                 # Get action from Q table
-                action_qualities = agent.get_qs(current_state)
-                qualities = action_qualities[:, 2]
+                qualities = agent.get_qs(current_state)
+                # qualities = action_qualities[:, 2]
                 best_index = np.argmax(qualities)
-                action = action_qualities[best_index][:2]
+                action = ACTIONS[best_index]  # [:2]
             else:
                 # Get random action
                 action = np.array([random.random() * 2 - 1,
