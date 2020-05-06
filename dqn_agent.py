@@ -56,7 +56,7 @@ class DQNAgent:
         model.add(Dense(64))
         '''
 
-        model.add(Dense(OUTPUT_1D_SHAPE, activation='softmax'))  # ACTION_SPACE_SIZE = how many choices (9)
+        model.add(Dense(OUTPUT_1D_SHAPE, activation='linear'))  # ACTION_SPACE_SIZE = how many choices (9)
         model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
 
         for layer in model.layers:

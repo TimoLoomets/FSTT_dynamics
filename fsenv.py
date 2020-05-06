@@ -15,7 +15,7 @@ class FSEnv:
     def __init__(self):
         self.STEP_PENALTY = 1
         self.CHECKPOINT_REWARD = 20
-        self.OOB_PENALTY = 200
+        self.OOB_PENALTY = 10
         self.episode_step = 0
         self.car = None
         self.OBSERVATION_SPACE_VALUES = INPUT_2D_SHAPE  # Linear speed and angular speed and then 5 Point Pairs
@@ -155,7 +155,7 @@ class FSEnv:
             reward = self.CHECKPOINT_REWARD
             # print("HIT CHECKPOINT")
         else:
-            reward = -self.STEP_PENALTY + self.car.linear_speed_value
+            reward = self.car.linear_speed_value / 2
 
         new_observation = self.get_observations()
 
