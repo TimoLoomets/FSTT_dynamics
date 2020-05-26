@@ -1,0 +1,10 @@
+cones_left:
+- - 5
+  - 2.5
+cones_right:
+- - 5
+  - -2.5
+starting_pose_front_wing:
+- 0.0
+- 0.0
+- 0.0

@@ -163,7 +163,7 @@ def point_in_rectangle(point, rectangle, rectangle_area):
 
 def load_track():
     global track
-    track = yaml.load(open(path.join('FSG.yaml'), 'r'), Loader=yaml.FullLoader)
+    track = yaml.load(open(path.join('tracks', 'FSG.yaml'), 'r'), Loader=yaml.FullLoader)
     print(track)
 
 

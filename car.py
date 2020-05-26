@@ -95,7 +95,7 @@ class Car:
         self.accelerate(control[0])
         self.steer(control[1])
 
-        half_angle = self.omega / 2 * t
+        half_angle = self.omega / 2 * t * (self.speed / self.speed_max)
         self.rotate(half_angle)
         self.move(self.speed * t)
         self.rotate(half_angle)

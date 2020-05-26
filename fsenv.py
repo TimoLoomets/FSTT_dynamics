@@ -100,7 +100,7 @@ class FSEnv:
     def check_checkpoints(self):
         corners = self.car.get_corners()
         area = self.car.area
-        for i in range(2):
+        for i in range(min(2, len(self.checkpoints))):
             if self.point_in_rectangle(self.checkpoints[i], corners, area):
                 for j in range(i + 1):
                     self.checkpoints.popleft()
@@ -108,7 +108,7 @@ class FSEnv:
         return False
 
     def load_track(self):
-        self.track = yaml.load(open(path.join('FSG.yaml'), 'r'), Loader=yaml.FullLoader)
+        self.track = yaml.load(open(path.join('tracks', 'FSG.yaml'), 'r'), Loader=yaml.FullLoader)
         print(self.track)
 
     def calculate_center_line(self):
@@ -120,11 +120,15 @@ class FSEnv:
             left_cone = sorted_pairs.blueCones[i]
             right_cone = sorted_pairs.yellowCones[i]
             self.center_points.append(((left_cone.x + right_cone.x) / 2, (left_cone.y + right_cone.y) / 2))
+        if len(self.center_points) > 25:
+            self.center_points.pop(0)
+            self.center_points.pop(0)
 
     def reset(self):
         self.car = Car(self.track["starting_pose_front_wing"][0], self.track["starting_pose_front_wing"][1],
                        self.track["starting_pose_front_wing"][2] - pi / 2)
         self.checkpoints = deque(self.center_points)
+        self.episode_step = 0
         return self.get_observations()
 
     def get_observations(self):
@@ -139,10 +143,14 @@ class FSEnv:
             y_ = x * sin(phi) + y * cos(phi)
             output.append((x_, y_))
 
+        total_points = INPUT_2D_SHAPE[0]
+        while len(output) < total_points:
+            output.append((0, 0))
+
         dt = np.dtype('float')
         return np.array(output, dtype=dt)
 
-    def step(self, action):
+    def step(self, action, visualize=False):
         self.episode_step += 1
         throttle = action[0]  # (action % 20 - 10) / 10.0
         steering = action[1]  # (action // 20 - 10) / 10.0
@@ -163,6 +171,7 @@ class FSEnv:
         if reward == -self.OOB_PENALTY or self.episode_step >= EPISODE_LENGTH:
             done = True
 
-        self.visualizer.render(self.track, self.checkpoints, self.car)
-        #print("reward", reward)
+        if visualize:
+            self.visualizer.render(self.track, self.checkpoints, self.car)
+        # print("reward", reward)
         return new_observation, reward, done

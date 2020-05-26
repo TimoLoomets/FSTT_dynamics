@@ -56,7 +56,7 @@ class DQNAgent:
         model.add(Dense(64))
         '''
 
-        model.add(Dense(OUTPUT_1D_SHAPE, activation='linear'))  # ACTION_SPACE_SIZE = how many choices (9)
+        model.add(Dense(OUTPUT_1D_SHAPE, activation='softmax'))  # ACTION_SPACE_SIZE = how many choices (9)
         model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
 
         for layer in model.layers:
@@ -71,9 +71,10 @@ class DQNAgent:
         self.replay_memory.append(transition)
 
     # Queries main network for Q values given current observation space (environment state)
-    def get_qs(self, state):
+    def get_qs(self, state, visualize=False):
         output = np.reshape(self.model.predict(np.array(state).reshape(-1, *state.shape))[0], OUTPUT_2D_SHAPE)
-        self.output_visualizer.render(np.concatenate((np.array(ACTIONS), output), axis=1))
+        if visualize:
+            self.output_visualizer.render(np.concatenate((np.array(ACTIONS), output), axis=1))
         return output
 
     # Trains main network every step during episode

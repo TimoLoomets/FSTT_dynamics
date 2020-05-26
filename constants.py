@@ -1,18 +1,18 @@
-DISCOUNT = 0.99
+DISCOUNT = 0.5
 
 REPLAY_MEMORY_SIZE = 50_000
-MIN_REPLAY_MEMORY_SIZE = 100
+MIN_REPLAY_MEMORY_SIZE = 256
 MODEL_NAME = "RELUx3"
-MINIBATCH_SIZE = 64  # How many steps (samples) to use for training
-UPDATE_TARGET_EVERY = 5  # Terminal states (end of episodes)
-MIN_REWARD = -200
+MINIBATCH_SIZE = 128  # How many steps (samples) to use for training
+UPDATE_TARGET_EVERY = 10  # Terminal states (end of episodes)
+MIN_REWARD = 5
 
 EPSILON_DECAY = 0.99975
 MIN_EPSILON = 0.1
 
 EPISODES = 10_000
-EPISODE_LENGTH = 1000
-AGGREGATE_STATS_EVERY = 10  # episodes
+EPISODE_LENGTH = 200
+AGGREGATE_STATS_EVERY = 50  # episodes
 SHOW_PREVIEW = True
 
 INPUT_2D_SHAPE = (6, 2)

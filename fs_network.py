@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 import random
 import time
@@ -10,13 +11,19 @@ from fsenv import FSEnv
 from dqn_agent import DQNAgent
 from constants import *
 
-epsilon = 0.5
+epsilon = 0.99
 
 if __name__ == "__main__":
     start_time = time.time()
     env = FSEnv()
 
     ep_rewards = [-200]
+
+    # Graphing
+    tracked_rewards = []
+    first_skipped_flag = False
+    plt.ion()
+    plt.show()
 
     # For more repetitive results
     random.seed(1)
@@ -50,8 +57,8 @@ if __name__ == "__main__":
                 action = ACTIONS[best_index]  # [:2]
             else:
                 # Get random action
-                action = np.array([random.random() * 2 - 1,
-                                   random.random() * 2 - 1])  # np.random.randint(0, env.ACTION_SPACE_SIZE)  # np.array(act, dtype=dt)
+                action = ACTIONS[np.random.randint(0, env.ACTION_SPACE_SIZE)]  # np.array([random.random() * 2 - 1,
+                # random.random() * 2 - 1])  # np.random.randint(0, env.ACTION_SPACE_SIZE)  # np.array(act, dtype=dt)
 
             new_state, reward, done = env.step(action)
 
@@ -74,16 +81,27 @@ if __name__ == "__main__":
             agent.tensorboard.update_stats(reward_avg=average_reward, reward_min=min_reward, reward_max=max_reward,
                                            epsilon=epsilon)
 
+            if episode > 10:  # -50 < average_reward < 50 and -50 < max_reward < 50 or episode > 100:
+                tracked_rewards.append((min_reward, average_reward, max_reward))
+                plt.cla()
+                plt.plot([e[0] for e in tracked_rewards], color='tab:red')
+                plt.plot([e[1] for e in tracked_rewards], color='tab:orange')
+                plt.plot([e[2] for e in tracked_rewards], color='tab:green')
+                plt.draw()
+                plt.pause(0.001)
+
             # Save model, but only when min reward is greater or equal a set value
             print("rewards: ", min_reward, average_reward, max_reward)
+            print("epsilon: ", epsilon)
             if average_reward >= MIN_REWARD:
                 agent.model.save(
-                    f'models/{MODEL_NAME}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}.model')
+                    f'models/{MODEL_NAME}__score_{(1 - epsilon) * average_reward:_>7.2f}.model')
 
         # Decay epsilon
         if epsilon > MIN_EPSILON:
             epsilon *= EPSILON_DECAY
             epsilon = max(MIN_EPSILON, epsilon)
 
+    agent.model.save('models/__final.model')
     end_time = time.time()
     print("total time:", end_time - start_time)
