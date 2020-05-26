@@ -26,6 +26,18 @@ class SimulatorVisualizer:
         pts = pts.reshape((-1, 1, 2))
         cv2.polylines(self.img, [pts], True, (0, 0, 255))
 
+        # print(pts)
+        points = np.array([[((pts[1, 0, 0] + pts[2, 0, 0]) / 2, (pts[1, 0, 1] + pts[2, 0, 1]) / 2)],
+                           [tuple(pts[0, 0])],
+                           [tuple(pts[3, 0])]]
+                          , np.int32)
+        # print(points)
+        cv2.drawContours(self.img,
+                         [points],
+                         0,
+                         (0, 0, 255),
+                         -1)
+
     def draw_track(self, track, checkpoints):
         last_cone = None
         for cone in track["cones_left"]:
