@@ -19,14 +19,9 @@ class InputVisualizer:
     def _draw_input(self, input):
         odom = input[0]
         cones = list(filter(lambda x: x[0] != 0 or x[1] != 0, input[1:]))
-        print(cones)
-
-        last_loc = (int(self.MIN_WIDTH / 2), int(self.MIN_WIDTH / 2))
-        cv2.circle(self.img,
-                   last_loc,
-                   max(int(self.MIN_WIDTH / 100), 1),
-                   (255, 0, 0),
-                   -1)
+        # print(cones)
+        if len(cones) == 0:
+            return
 
         max_x = max(cone[0] for cone in cones)
         min_x = min(cone[0] for cone in cones)
@@ -38,10 +33,18 @@ class InputVisualizer:
         positive_y = int(max(max_y * self.PIXELS_PER_METER, self.MIN_WIDTH / 2))
         negative_y = int(max(-min_y * self.PIXELS_PER_METER, self.MIN_WIDTH / 2))
 
-        self._clear(int(positive_x + negative_x), int(positive_y + negative_y))
+        self._clear(int(positive_y + negative_y), int(positive_x + negative_x))
+
+        last_loc = (int(negative_x), int(positive_y))
+        cv2.circle(self.img,
+                   last_loc,
+                   max(int(self.MIN_WIDTH / 100), 1),
+                   (0, 0, 255),
+                   -1)
 
         for cone in cones:
-            loc = (int(cone[0] * self.PIXELS_PER_METER), int(cone[1] * self.PIXELS_PER_METER))
+            loc = (int(negative_x + cone[0] * self.PIXELS_PER_METER),
+                   int(positive_y - cone[1] * self.PIXELS_PER_METER))
             cv2.circle(self.img,
                        loc,
                        max(int(self.MIN_WIDTH / 100), 1),

@@ -10,6 +10,8 @@ from constants import *
 from modified_tensor_board import ModifiedTensorBoard
 from interpolator import Interpolator
 from output_visualizer import OutputVisualizer
+from input_visualizer import InputVisualizer
+
 
 class DQNAgent:
     def __init__(self):
@@ -31,6 +33,7 @@ class DQNAgent:
 
         # Visualization
         self.output_visualizer = OutputVisualizer()
+        self.input_visualizer = InputVisualizer()
 
     @staticmethod
     def create_model():
@@ -74,6 +77,7 @@ class DQNAgent:
     def get_qs(self, state, visualize=False):
         output = np.reshape(self.model.predict(np.array(state).reshape(-1, *state.shape))[0], OUTPUT_2D_SHAPE)
         if visualize:
+            self.input_visualizer.render(state)
             self.output_visualizer.render(np.concatenate((np.array(ACTIONS), output), axis=1))
         return output
 
@@ -87,12 +91,12 @@ class DQNAgent:
         minibatch = random.sample(self.replay_memory, MINIBATCH_SIZE)
 
         # Get current states from minibatch, then query NN model for Q values
-        current_states = np.array([transition[0] for transition in minibatch])# / 255
+        current_states = np.array([transition[0] for transition in minibatch])  # / 255
         current_qs_list = self.model.predict(current_states)
 
         # Get future states from minibatch, then query NN model for Q values
         # When using target network, query it, otherwise main network should be queried
-        new_current_states = np.array([transition[3] for transition in minibatch])# / 255
+        new_current_states = np.array([transition[3] for transition in minibatch])  # / 255
         future_qs_list = self.target_model.predict(new_current_states)
 
         x = []
@@ -119,8 +123,8 @@ class DQNAgent:
             interpolator.set_u(current_actions)
             interpolator.set_q(current_qualities)
             interpolator.update_function(action, new_q)
-            #current_qs = np.zeros(OUTPUT_2D_SHAPE)
-            #current_qs[:, :2] = interpolator.get_u()
+            # current_qs = np.zeros(OUTPUT_2D_SHAPE)
+            # current_qs[:, :2] = interpolator.get_u()
             current_qs = interpolator.get_q()
 
             # print(current_state)

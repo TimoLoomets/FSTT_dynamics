@@ -51,7 +51,7 @@ if __name__ == "__main__":
         while not done:
             if np.random.random() > epsilon:
                 # Get action from Q table
-                qualities = agent.get_qs(current_state)
+                qualities = agent.get_qs(current_state, VISUALIZE_WHILE_TRAINING)
                 # qualities = action_qualities[:, 2]
                 best_index = np.argmax(qualities)
                 action = ACTIONS[best_index]  # [:2]
@@ -60,7 +60,7 @@ if __name__ == "__main__":
                 action = ACTIONS[np.random.randint(0, env.ACTION_SPACE_SIZE)]  # np.array([random.random() * 2 - 1,
                 # random.random() * 2 - 1])  # np.random.randint(0, env.ACTION_SPACE_SIZE)  # np.array(act, dtype=dt)
 
-            new_state, reward, done = env.step(action)
+            new_state, reward, done = env.step(action, VISUALIZE_WHILE_TRAINING)
 
             # Transform new continous state to new discrete state and count reward
             episode_reward += reward
@@ -97,11 +97,11 @@ if __name__ == "__main__":
                 agent.model.save(
                     f'models/{MODEL_NAME}__score_{(1 - epsilon) * average_reward:_>7.2f}.model')
 
-        # Decay epsilon
-        if epsilon > MIN_EPSILON:
-            epsilon *= EPSILON_DECAY
-            epsilon = max(MIN_EPSILON, epsilon)
+            # Decay epsilon
+            if epsilon > MIN_EPSILON:
+                epsilon *= EPSILON_DECAY
+                epsilon = max(MIN_EPSILON, epsilon)
 
-    agent.model.save('models/__final.model')
+    agent.model.save('models/__final_single_point.model')
     end_time = time.time()
     print("total time:", end_time - start_time)

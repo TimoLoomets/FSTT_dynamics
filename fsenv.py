@@ -108,7 +108,7 @@ class FSEnv:
         return False
 
     def load_track(self):
-        self.track = yaml.load(open(path.join('tracks', 'FSG.yaml'), 'r'), Loader=yaml.FullLoader)
+        self.track = yaml.load(open(path.join('tracks', TRACK_FILE), 'r'), Loader=yaml.FullLoader)
         print(self.track)
 
     def calculate_center_line(self):
@@ -136,7 +136,7 @@ class FSEnv:
         output = [(self.car.linear_speed_value, self.car.angular_speed_value)]
         for point in observations:
             loc = self.car.location
-            phi = self.car.phi
+            phi = self.car.phi + pi / 2
             x = point[0] - loc[0]
             y = point[1] - loc[1]
             x_ = x * cos(phi) - y * sin(phi)
@@ -163,12 +163,14 @@ class FSEnv:
             reward = self.CHECKPOINT_REWARD
             # print("HIT CHECKPOINT")
         else:
-            reward = self.car.linear_speed_value / 2
+            reward = -self.STEP_PENALTY  # self.car.linear_speed_value / 2
 
         new_observation = self.get_observations()
 
         done = False
-        if reward == -self.OOB_PENALTY or self.episode_step >= EPISODE_LENGTH:
+        if reward == -self.OOB_PENALTY \
+                or self.episode_step >= EPISODE_LENGTH \
+                or len(self.checkpoints) == 0:
             done = True
 
         if visualize:
