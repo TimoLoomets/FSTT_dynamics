@@ -1,6 +1,6 @@
 # FSTT dynamics
 
-[![version](https://img.shields.io/badge/python_version-3.6-green.svg)](https://semver.org)
+[![version](https://img.shields.io/badge/python_version-3.7.0-green.svg)](https://semver.org)
 
 Would be nice if python is 64bit.
 
