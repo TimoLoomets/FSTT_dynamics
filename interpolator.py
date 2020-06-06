@@ -79,14 +79,16 @@ class Interpolator:
             self.actions = action
         self.qualities = q
 
-    def update_function(self, action, quality, update_action=True):
+    def update_function(self, action, quality, update_action=False):
         knot_count = len(self.qualities)
 
-        q_max = max(self.qualities + [quality])
+        max_list = [[e[0] for e in self.qualities.tolist()] if type(self.qualities) == np.ndarray else self.qualities][0] \
+                   + [float(quality)]
+        q_max = max(max_list)
         for it in range(0, knot_count):
             self.qualities[it] += self.e * \
-                              (quality - self.qualities[it]) \
-                              / self.distance(action, it, q_max) ** 2
+                                  (quality - self.qualities[it]) \
+                                  / self.distance(action, it, q_max) ** 2
 
     def set_u(self, actions):
         self.actions = actions
@@ -111,12 +113,14 @@ if __name__ == "__main__":
 
     u = []
     interpolator = Interpolator()
-    for i in np.arange(1, -0.1, -0.5):
+    for i in np.arange(-1, 1.1, 0.5):
         for j in np.arange(-1, 1.1, 0.5):
             u.append(np.array([i, j]))
-    q = [0.2, 0.65, 1, 0.65, 0.2,
-         0.15, 0.25, 0.5, 0.25, 0.15,
-         0, 0, 0, 0, 0]
+    q = [0.04448929, 0.5086165, 0.76275706, -0.2851543, 0.39455223,
+         -0.19585085, -0.52812827, 0.25080782, 0.4987614, 0.26595366,
+         -0.3598364, 0.41622806, 0.10484912, -0.11532316, -0.11455766,
+         -0.14297369, -0.04747943, 0.19820265, 0.5723205, 0.13500524,
+         -0.24156858, 0.15854892, 0.22840545, 0.35542938, -0.5061423]
 
     visualizer = OutputVisualizer()
     visualizer.render(np.append(u, [[e] for e in q], axis=1))
@@ -125,10 +129,10 @@ if __name__ == "__main__":
     interpolator.set_q(q)
     interpolator.set_u(u)
 
-    for _ in range(5):
-        interpolator.update_function_2(np.array([0, 0]), 2)  # , update_action=False)
+    # for _ in range(5):
+    #    interpolator.update_function_2(np.array([0, 0]), 2)  # , update_action=False)
     # interpolator.update_function(np.array([-1, 0]), 2)#, update_action=False)
-    # interpolator.update_function(np.array([-1, 0]), 2)#, update_action=False)
+    interpolator.update_function(np.array([-0.5, 1.0]), -0.6402964293956757)  # , update_action=False)
 
     q = interpolator.get_q()
     u = interpolator.get_u()
