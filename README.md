@@ -6,13 +6,13 @@ Would be nice if python is 64bit.
 
 This is the dynamics module code for the Formula Student project. 
 
-##Setup
+## Setup
 ### Venv
 You can setup and activate a virtual environment if wished.
-#####Windows
+##### Windows
 * `>python -m venv --system-site-packages .\venv`
 * `.\venv\Scripts\activate`
-#####Ubuntu 
+##### Ubuntu 
 * `python3 -m venv --system-site-packages ./venv`
 * `source ./venv/bin/activate`  # sh, bash, or zsh
 * `../venv/bin/activate.fish`  # fish
@@ -26,7 +26,7 @@ For exiting venv
 * `deactivate`  # don't exit until you're done using TensorFlow
 pip list  # show packages installed within the virtual environment`
 
-###Installations
+### Installations
 Install required python modules. If your system has an nvida graphics card - cuda is required `~ ver 10.0`
 * `pip install -r requirements.txt`
 
@@ -36,9 +36,9 @@ If any problems
         
 Now run the code in the specified files.
 
-###Training
+### Training
 `fs_network.py`
 
 
-###Testing
+### Testing
 `fs_network_test.py`
