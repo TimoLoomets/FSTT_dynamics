@@ -1,8 +1,9 @@
 # FSTT dynamics
 
-[![version](https://img.shields.io/badge/python_version-3.7.0-green.svg)](https://semver.org)
+[![version](https://img.shields.io/badge/python(64bit)_version-3.7.0-green.svg)](https://semver.org)
 
-Would be nice if python is 64bit.
+Would be nice if python is 64bit bebuz tensorflow will not try to kill you with errors then.
+But if you like a challenge try 32bit.
 
 This is the dynamics module code for the Formula Student project. 
 

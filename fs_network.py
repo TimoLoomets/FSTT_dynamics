@@ -20,6 +20,7 @@ if __name__ == "__main__":
     ep_rewards = [-200]
 
     # Graphing
+    all_rewards = []
     tracked_rewards = []
     tracked_epsilons = []
     first_skipped_flag = False
@@ -87,12 +88,17 @@ if __name__ == "__main__":
             if episode > 10:  # -50 < average_reward < 50 and -50 < max_reward < 50 or episode > 100:
                 tracked_rewards.append((min_reward, average_reward, max_reward))
                 tracked_epsilons.append(epsilon)
+                all_rewards.append(ep_rewards[-AGGREGATE_STATS_EVERY:])
                 plt.cla()
-                ax1.plot([e[0] for e in tracked_rewards], color='tab:red')
-                ax1.plot([e[1] for e in tracked_rewards], color='tab:orange')
-                ax1.plot([e[2] for e in tracked_rewards], color='tab:green')
-                ax2.plot(tracked_epsilons, color='tab:blue')
-                plt.draw()
+                ax1.plot([e for e in all_rewards], 'co', markersize=0.5)
+                ax1.plot([e[0] for e in tracked_rewards], 'r', alpha=0.8, linestyle='dashdot', linewidth=1)
+                ax1.plot([e[1] for e in tracked_rewards], color='tab:orange', alpha=0.5, linestyle='dashdot', linewidth=1)
+                ax1.plot([e[2] for e in tracked_rewards], 'g', alpha=0.8, linestyle='dashdot', linewidth=1)
+                ax1.set_ylabel('Quality')
+                ax1.set_xlabel('Episode')
+                ax2.plot(tracked_epsilons, 'b', alpha=0.22, linestyle='dashdot', linewidth=1)
+                ax2.set_ylabel('Epsilon')
+                plt.plot()
                 plt.pause(0.001)
 
             # Save model, but only when min reward is greater or equal a set value
