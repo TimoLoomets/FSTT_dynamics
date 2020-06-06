@@ -16,7 +16,7 @@ AGGREGATE_STATS_EVERY = 20  # episodes
 SHOW_PREVIEW = True
 
 VISUALIZE_WHILE_TRAINING = False  # True
-TRACK_FILE = 'tilted_three_points.yaml'
+TRACK_FILE = 'FSG.yaml'
 
 INPUT_2D_SHAPE = (6, 2)
 

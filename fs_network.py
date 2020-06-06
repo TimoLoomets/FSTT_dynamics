@@ -21,7 +21,10 @@ if __name__ == "__main__":
 
     # Graphing
     tracked_rewards = []
+    tracked_epsilons = []
     first_skipped_flag = False
+    fig, ax1 = plt.subplots()
+    ax2 = ax1.twinx()
     plt.ion()
     plt.show()
 
@@ -69,7 +72,7 @@ if __name__ == "__main__":
             #    env.render()
 
             agent.update_replay_memory((current_state, action, reward, new_state, done))
-            agent.train(done, step)
+            agent.train(done)
             current_state = new_state
             step += 1
 
@@ -83,10 +86,12 @@ if __name__ == "__main__":
 
             if episode > 10:  # -50 < average_reward < 50 and -50 < max_reward < 50 or episode > 100:
                 tracked_rewards.append((min_reward, average_reward, max_reward))
+                tracked_epsilons.append(epsilon)
                 plt.cla()
-                plt.plot([e[0] for e in tracked_rewards], color='tab:red')
-                plt.plot([e[1] for e in tracked_rewards], color='tab:orange')
-                plt.plot([e[2] for e in tracked_rewards], color='tab:green')
+                ax1.plot([e[0] for e in tracked_rewards], color='tab:red')
+                ax1.plot([e[1] for e in tracked_rewards], color='tab:orange')
+                ax1.plot([e[2] for e in tracked_rewards], color='tab:green')
+                ax2.plot(tracked_epsilons, color='tab:blue')
                 plt.draw()
                 plt.pause(0.001)
 

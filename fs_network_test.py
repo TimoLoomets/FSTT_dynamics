@@ -8,7 +8,7 @@ from constants import *
 
 from collections import deque
 
-model = load_model("models/__final.model")
+model = load_model("models/RELUx3__score___26.29.model")
 model.summary()
 for layer in model.layers:
     print(layer.input_shape, "=>", layer.output_shape)

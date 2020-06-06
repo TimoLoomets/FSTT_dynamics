@@ -42,6 +42,8 @@ class DQNAgent:
         model.add(Flatten())
         model.add(Dense(64, activation='relu'))
         model.add(Dense(64, activation='relu'))
+        model.add(Dense(OUTPUT_1D_SHAPE, activation='linear'))
+        model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
 
         '''
         model.add(Conv1D(256, 2,
@@ -59,9 +61,6 @@ class DQNAgent:
         model.add(Dense(64))
         '''
 
-        model.add(Dense(OUTPUT_1D_SHAPE, activation='softmax'))  # ACTION_SPACE_SIZE = how many choices (9)
-        model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
-
         for layer in model.layers:
             print(layer.output_shape)
         model.summary()
@@ -75,14 +74,16 @@ class DQNAgent:
 
     # Queries main network for Q values given current observation space (environment state)
     def get_qs(self, state, visualize=False):
-        output = np.reshape(self.model.predict(np.array(state).reshape(-1, *state.shape))[0], OUTPUT_2D_SHAPE)
+        predicted_qualities = self.model.predict(np.array(state).reshape(-1, *state.shape))
+        reshaped_qualities = predicted_qualities[0]
+        output = np.reshape(reshaped_qualities, OUTPUT_2D_SHAPE)
         if visualize:
             self.input_visualizer.render(state)
             self.output_visualizer.render(np.concatenate((np.array(ACTIONS), output), axis=1))
         return output
 
     # Trains main network every step during episode
-    def train(self, terminal_state, step):
+    def train(self, terminal_state):
         # Start training only if certain number of samples is already saved
         if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
             return
@@ -108,7 +109,8 @@ class DQNAgent:
 
             # If not a terminal state, get new q from future states, otherwise set it to 0
             # almost like with Q Learning, but we use just part of equation here
-            future_qs = np.reshape(future_qs_list[index], OUTPUT_2D_SHAPE)
+            future_qs_list_at_index = future_qs_list[index]
+            future_qs = np.reshape(future_qs_list_at_index, OUTPUT_2D_SHAPE)
             if not done:
                 max_future_q = np.max(future_qs)
                 new_q = reward + DISCOUNT * max_future_q
@@ -116,7 +118,8 @@ class DQNAgent:
                 new_q = reward
 
             # Update Q value for given state
-            current_qs = np.reshape(current_qs_list[index], OUTPUT_2D_SHAPE)
+            current_qs_list_at_index = current_qs_list[index]
+            current_qs = np.reshape(current_qs_list_at_index, OUTPUT_2D_SHAPE)
             current_actions = ACTIONS
             current_qualities = current_qs
 
@@ -125,7 +128,7 @@ class DQNAgent:
             interpolator.update_function(action, new_q)
             # current_qs = np.zeros(OUTPUT_2D_SHAPE)
             # current_qs[:, :2] = interpolator.get_u()
-            current_qs = interpolator.get_q()
+            current_qs = interpolator.get_q()  # [current_actions.index(action)] = [new_q]  #
 
             # print(current_state)
             # print(current_qs_list)
@@ -134,12 +137,13 @@ class DQNAgent:
 
             # And append to our training data
             x.append(current_state)
-            y.append(np.reshape(current_qs, OUTPUT_1D_SHAPE))
+            reshaped_current_qs = np.reshape(current_qs, OUTPUT_1D_SHAPE)
+            y.append(reshaped_current_qs)
 
         # print("x:", x)
         # print("y:", y)
         # Fit on all samples as one batch, log only on terminal state
-        self.model.fit(np.array(x) / 255, np.array(y), batch_size=MINIBATCH_SIZE, verbose=0, shuffle=False,
+        self.model.fit(np.array(x), np.array(y), batch_size=MINIBATCH_SIZE, verbose=0, shuffle=False,
                        callbacks=[self.tensorboard] if terminal_state else None)
         # Update target network counter every episode
         if terminal_state:

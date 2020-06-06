@@ -12,7 +12,7 @@ class Interpolator:
         DEFAULT_STEP = 1  # 10 ** 5
 
         self.c = 0.9  # Smoothing factor
-        self.e = 0.01  # sys.float_info.epsilon  # Really small number
+        self.e = 0.1  # sys.float_info.epsilon  # Really small number
 
         self.actions = []
         self.qualities = []
