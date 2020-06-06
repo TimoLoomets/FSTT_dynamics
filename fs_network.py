@@ -92,11 +92,12 @@ if __name__ == "__main__":
                 plt.cla()
                 ax1.plot([e for e in all_rewards], 'co', markersize=0.5)
                 ax1.plot([e[0] for e in tracked_rewards], 'r', alpha=0.8, linestyle='dashdot', linewidth=1)
-                ax1.plot([e[1] for e in tracked_rewards], color='tab:orange', alpha=0.5, linestyle='dashdot', linewidth=1)
+                ax1.plot([e[1] for e in tracked_rewards], color='tab:orange', alpha=0.5, linestyle='dashdot',
+                         linewidth=1)
                 ax1.plot([e[2] for e in tracked_rewards], 'g', alpha=0.8, linestyle='dashdot', linewidth=1)
                 ax1.set_ylabel('Quality')
                 ax1.set_xlabel('Episode')
-                ax2.plot(tracked_epsilons, 'b', alpha=0.22, linestyle='dashdot', linewidth=1)
+                ax2.plot(tracked_epsilons, 'b', alpha=0.22, linestyle='solid', linewidth=1)
                 ax2.set_ylabel('Epsilon')
                 plt.plot()
                 plt.pause(0.001)
@@ -113,6 +114,7 @@ if __name__ == "__main__":
                 epsilon *= EPSILON_DECAY
                 epsilon = max(MIN_EPSILON, epsilon)
 
-    agent.model.save('models/__final_single_point.model')
+    agent.model.save('models/__' + TRACK_FILE.split('.')[0] + '_' + str(time.time()) + '.model')
+    plt.savefig('logs/' + TRACK_FILE.split('.')[0] + '_' + str(time.time()) + ".png")
     end_time = time.time()
     print("total time:", end_time - start_time)

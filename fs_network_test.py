@@ -8,7 +8,7 @@ from constants import *
 
 from collections import deque
 
-model = load_model("models/RELUx3__score___26.29.model")
+model = load_model("models/__final_tilted_three_points.model")
 model.summary()
 for layer in model.layers:
     print(layer.input_shape, "=>", layer.output_shape)
@@ -52,7 +52,7 @@ print("TEST 4 PASSED")
 output_visualizer = OutputVisualizer()
 input_visualizer = InputVisualizer()
 
-while True:
+for step in range(EPISODE_LENGTH):
     state = env.get_observations()
     input_visualizer.render(state)
     # action = np.argmax(model.predict(np.array(state).reshape(-1, *state.shape)))
