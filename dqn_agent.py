@@ -5,6 +5,7 @@ from keras.optimizers import Adam
 import time
 import random
 import numpy as np
+import pandas as pd
 
 from constants import *
 from modified_tensor_board import ModifiedTensorBoard
@@ -82,6 +83,10 @@ class DQNAgent:
             self.output_visualizer.render(np.concatenate((np.array(ACTIONS), output), axis=1))
         return output
 
+    def save_replay_memory(self):
+        df = pd.DataFrame([[d if type(d) != np.ndarray else d.tolist() for d in e] for e in self.replay_memory], columns=['State', 'Action', 'Reward', 'NextState', 'Done'])
+        df.to_csv('logs/' + TRACK_FILE.split('.')[0] + '/' + str(round(time.time())) + ".csv", index=False)
+
     # Trains main network every step during episode
     def train(self, terminal_state):
         # Start training only if certain number of samples is already saved
@@ -153,3 +158,4 @@ class DQNAgent:
         if self.target_update_counter > UPDATE_TARGET_EVERY:
             self.target_model.set_weights(self.model.get_weights())
             self.target_update_counter = 0
+            self.save_replay_memory()

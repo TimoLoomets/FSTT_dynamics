@@ -148,7 +148,7 @@ class FSEnv:
         return self.get_observations()
 
     def get_observations(self):
-        observations = list(self.checkpoints)[:5]
+        observations = list(self.checkpoints)[:INPUT_2D_SHAPE[0] - 1]
         output = [(self.car.linear_speed_value, self.car.angular_speed_value)]
         for point in observations:
             loc = self.car.location

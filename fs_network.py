@@ -36,6 +36,8 @@ if __name__ == "__main__":
 
     if not path.isdir('models'):
         makedirs('models')
+    if not path.isdir('logs/' + TRACK_FILE.split('.')[0]):
+        makedirs('logs/' + TRACK_FILE.split('.')[0])
 
     agent = DQNAgent()
 
@@ -115,6 +117,7 @@ if __name__ == "__main__":
                 epsilon = max(MIN_EPSILON, epsilon)
 
     agent.model.save('models/__' + TRACK_FILE.split('.')[0] + '_' + str(time.time()) + '.model')
-    plt.savefig('logs/' + TRACK_FILE.split('.')[0] + '_' + str(time.time()) + ".png")
+    agent.save_replay_memory()
+    plt.savefig('logs/' + TRACK_FILE.split('.')[0] + '/' + str(round(time.time())) + ".png")
     end_time = time.time()
     print("total time:", end_time - start_time)
