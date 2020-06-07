@@ -90,7 +90,7 @@ if __name__ == "__main__":
                 tracked_epsilons.append(epsilon)
                 all_rewards.append(ep_rewards[-AGGREGATE_STATS_EVERY:])
                 plt.cla()
-                ax1.plot([e for e in all_rewards], 'co', markersize=0.5)
+                ax1.plot([e for e in all_rewards], 'co', markersize=1.5)
                 ax1.plot([e[0] for e in tracked_rewards], 'r', alpha=0.8, linestyle='dashdot', linewidth=1)
                 ax1.plot([e[1] for e in tracked_rewards], color='tab:orange', alpha=0.5, linestyle='dashdot',
                          linewidth=1)

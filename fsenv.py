@@ -3,6 +3,7 @@ from collections import deque
 from math import sin, cos, pi
 import yaml
 from os import path
+from random import random
 
 from car import Car
 from constants import *
@@ -25,6 +26,7 @@ class FSEnv:
         self.size = 100
 
         self.track = {}
+        self.active_track = {}
         self.time_factor = 1
         self.sorter = ConeFilterNode()
         self.center_points = []
@@ -32,6 +34,7 @@ class FSEnv:
         self.visualizer = SimulatorVisualizer()
 
         self.load_track()
+        self.mutate_track(MUTATION_RANGE)
         self.car = Car(self.track["starting_pose_front_wing"][0], self.track["starting_pose_front_wing"][1],
                        self.track["starting_pose_front_wing"][2] + pi / 2)
         self.calculate_center_line()
@@ -88,14 +91,14 @@ class FSEnv:
     def check_track(self):
         corners = self.car.get_corners()
         area = self.car.area
-        for cone in self.track["cones_left"]:
+        for cone in self.active_track["cones_left"]:
             if self.point_in_rectangle(cone, corners, area):
                 return True
-        for cone in self.track["cones_right"]:
+        for cone in self.active_track["cones_right"]:
             if self.point_in_rectangle(cone, corners, area):
                 return True
-        return self.check_edges(self.track["cones_left"]) \
-               or self.check_edges(self.track["cones_right"])
+        return self.check_edges(self.active_track["cones_left"]) \
+               or self.check_edges(self.active_track["cones_right"])
 
     def check_checkpoints(self):
         corners = self.car.get_corners()
@@ -109,13 +112,23 @@ class FSEnv:
 
     def load_track(self):
         self.track = yaml.load(open(path.join('tracks', TRACK_FILE), 'r'), Loader=yaml.FullLoader)
+        self.active_track = self.track.copy()
         print(self.track)
+
+    def mutate_track(self, move_range):
+        self.active_track['cones_left'] = [[cone[0] + move_range * 2 * (random() - 0.5),
+                                            cone[1] + move_range * 2 * (random() - 0.5)]
+                                           for cone in self.track['cones_left']]
+        self.active_track['cones_right'] = [[cone[0] + move_range * 2 * (random() - 0.5),
+                                             cone[1] + move_range * 2 * (random() - 0.5)]
+                                            for cone in self.track['cones_right']]
 
     def calculate_center_line(self):
         self.sorter.pose_update(self.car)
-        sorted_pairs = self.sorter.map_update((self.track["cones_right"], self.track["cones_left"]))
-        print("yellows:", sorted_pairs.yellowCones)
-        print("blues:", sorted_pairs.blueCones)
+        sorted_pairs = self.sorter.map_update((self.active_track["cones_right"], self.active_track["cones_left"]))
+        # print("yellows:", sorted_pairs.yellowCones)
+        # print("blues:", sorted_pairs.blueCones)
+        self.center_points = []
         for i in range(len(sorted_pairs.yellowCones)):
             left_cone = sorted_pairs.blueCones[i]
             right_cone = sorted_pairs.yellowCones[i]
@@ -125,8 +138,11 @@ class FSEnv:
             self.center_points.pop(0)
 
     def reset(self):
-        self.car = Car(self.track["starting_pose_front_wing"][0], self.track["starting_pose_front_wing"][1],
-                       self.track["starting_pose_front_wing"][2] - pi / 2)
+        self.mutate_track(MUTATION_RANGE)
+        self.calculate_center_line()
+        self.car = Car(self.active_track["starting_pose_front_wing"][0],
+                       self.active_track["starting_pose_front_wing"][1],
+                       self.active_track["starting_pose_front_wing"][2] - pi / 2)
         self.checkpoints = deque(self.center_points)
         self.episode_step = 0
         return self.get_observations()
@@ -174,6 +190,6 @@ class FSEnv:
             done = True
 
         if visualize:
-            self.visualizer.render(self.track, self.checkpoints, self.car)
+            self.visualizer.render(self.active_track, self.checkpoints, self.car)
         # print("reward", reward)
         return new_observation, reward, done
