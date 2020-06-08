@@ -8,7 +8,7 @@ from constants import *
 
 from collections import deque
 
-model = load_model("models/__final_tilted_three_points.model")
+model = load_model("models/__three_points_night_1591653033.model")
 model.summary()
 for layer in model.layers:
     print(layer.input_shape, "=>", layer.output_shape)

@@ -81,8 +81,9 @@ class Interpolator:
 
     def update_function(self, action, quality, update_action=False):
         knot_count = len(self.qualities)
-
-        max_list = [[e[0] for e in self.qualities.tolist()] if type(self.qualities) == np.ndarray else self.qualities][0] \
+        #print("qualities:", self.qualities)
+        max_list = [self.qualities.tolist() if type(self.qualities) == np.ndarray else self.qualities][
+                       0] \
                    + [float(quality)]
         q_max = max(max_list)
         for it in range(0, knot_count):

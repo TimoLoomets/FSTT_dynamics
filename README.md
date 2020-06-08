@@ -37,9 +37,11 @@ If any problems
         
 Now run the code in the specified files.
 
-### Training
+### Training in simulator (slower)
 `fs_network.py`
 
+### Training on saved data (faster)
+`fs_network_train.py`
 
 ### Testing
 `fs_network_test.py`
