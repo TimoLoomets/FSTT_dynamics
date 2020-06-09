@@ -17,7 +17,7 @@ if __name__ == "__main__":
     # tf.device('/gpu:0')
     # tf.compat.v1.disable_eager_execution()
 
-    data = pd.read_csv('logs/three_points/' + '1591561999.csv')
+    data = pd.read_csv('logs/' + 'single_point/1591716449.csv')
     data_size = len(data)
     data_generator = data.iterrows()
 
@@ -33,13 +33,13 @@ if __name__ == "__main__":
 
     def create_model():
         model = Sequential()
-        model.add(Dense(128, activation='relu', input_shape=INPUT_2D_SHAPE))
+        model.add(Dense(32, activation='sigmoid', input_shape=INPUT_2D_SHAPE))
         model.add(Flatten())
-        for i in range(4):
-            model.add(Dense(2**(8-i), activation='relu'))
-        # model.add(Dense(64, activation='relu'))
-        # model.add(Dense(64, activation='relu'))
-        # model.add(Dense(64, activation='relu'))
+        # for i in range(4):
+        #    model.add(Dense(2**(8-i), activation='relu'))
+        # model.add(Dense(125, activation='sigmoid'))
+        model.add(Dense(75, activation='sigmoid'))  # LOOK AT SIGMOID SOME MORE
+        #model.add(Dense(125, activation='sigmoid'))
         model.add(Dense(OUTPUT_1D_SHAPE, activation='linear'))
         model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
         return model
@@ -88,13 +88,19 @@ if __name__ == "__main__":
             calculate_qs(eval_data_list)
             eval_x, eval_y = get_x_y(eval_data_list)
 
+        def on_train_begin(self, logs=None):
+            global train_x
+            global train_y
+            calculate_qs(train_data_list)
+            train_x, train_y = get_x_y(train_data_list)
+
 
     # start = time.time()
 
     # for _ in range(10):
     model.fit(np.array(train_x), np.array(train_y),
               batch_size=64,
-              epochs=1000,
+              epochs=100,
               callbacks=[MyCustomCallback()])
     model.save('models/__' + TRACK_FILE.split('.')[0] + '_night_' + str(round(time.time())) + '.model')
     # end = time.time()

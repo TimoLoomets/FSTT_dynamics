@@ -14,7 +14,7 @@ class Car:
         # self.height = PIXELS_PER_METER * self._height
         self.speed = 0
         self.omega = 0
-        self.speed_max = 32
+        self.speed_max = 3  # 32
         self.a_max = 7.7
 
     @property

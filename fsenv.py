@@ -32,6 +32,7 @@ class FSEnv:
         self.center_points = []
         self.checkpoints = deque()
         self.visualizer = SimulatorVisualizer()
+        self.last_speed_was_zero = False
 
         self.load_track()
         self.mutate_track(MUTATION_RANGE)
@@ -75,6 +76,10 @@ class FSEnv:
             total_area += FSEnv.triangle_area(point, rectangle[i], rectangle[i - 1])
         return abs(total_area - rectangle_area) < 0.001
 
+    @staticmethod
+    def point_in_circle(point, center, radius):
+        return (point[0] - center[0]) ** 2 + (point[1] - center[1]) ** 2 < radius ** 2
+
     def check_edges(self, cones):
         car_edges = self.car.get_edges()
         # cones = self.track["cones_left"]
@@ -104,7 +109,9 @@ class FSEnv:
         corners = self.car.get_corners()
         area = self.car.area
         for i in range(min(2, len(self.checkpoints))):
-            if self.point_in_rectangle(self.checkpoints[i], corners, area):
+            if self.point_in_circle(self.checkpoints[i],
+                                    (self.car.x, self.car.y),
+                                    2):
                 for j in range(i + 1):
                     self.checkpoints.popleft()
                 return True
@@ -125,7 +132,7 @@ class FSEnv:
 
     def calculate_center_line(self):
         self.sorter.pose_update(self.car)
-        sorted_pairs = self.sorter.map_update((self.active_track["cones_right"], self.active_track["cones_left"]))
+        sorted_pairs = self.sorter.map_update((self.track["cones_right"], self.track["cones_left"]))
         # print("yellows:", sorted_pairs.yellowCones)
         # print("blues:", sorted_pairs.blueCones)
         self.center_points = []
@@ -145,6 +152,7 @@ class FSEnv:
                        self.active_track["starting_pose_front_wing"][2] - pi / 2)
         self.checkpoints = deque(self.center_points)
         self.episode_step = 0
+        self.last_speed_was_zero = False
         return self.get_observations()
 
     def get_observations(self):
@@ -186,8 +194,12 @@ class FSEnv:
         done = False
         if reward == -self.OOB_PENALTY \
                 or self.episode_step >= EPISODE_LENGTH \
-                or len(self.checkpoints) == 0:
+                or len(self.checkpoints) == 0 \
+                or (self.last_speed_was_zero and self.car.speed == 0):
             done = True
+
+        if self.car.speed == 0:
+            self.last_speed_was_zero = True
 
         if visualize:
             self.visualizer.render(self.active_track, self.checkpoints, self.car)

@@ -39,10 +39,10 @@ class DQNAgent:
     @staticmethod
     def create_model():
         model = Sequential()
-        model.add(Dense(128, activation='relu', input_shape=INPUT_2D_SHAPE))
+        model.add(Dense(32, activation='sigmoid', input_shape=INPUT_2D_SHAPE))
         model.add(Flatten())
-        model.add(Dense(64, activation='relu'))
-        model.add(Dense(64, activation='relu'))
+        model.add(Dense(128, activation='sigmoid'))
+        model.add(Dense(125, activation='sigmoid'))
         model.add(Dense(OUTPUT_1D_SHAPE, activation='linear'))
         model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
 

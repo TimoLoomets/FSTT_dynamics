@@ -111,6 +111,7 @@ class ConeFilterNode:
         for cone in data[1]:
             cones_blue.append(Point2D(x=cone[0], y=cone[1], id=0))
         self.map = Map2D(yellowCones=cones_yellow, blueCones=cones_blue)
+        self.used_locations = set()
         return self.filter_data()
 
     def pose_update(self, data):
