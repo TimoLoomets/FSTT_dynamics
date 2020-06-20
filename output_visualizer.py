@@ -8,7 +8,7 @@ from interpolator import Interpolator
 
 
 class OutputVisualizer:
-    def __init__(self):
+    def __init__(self, window_name="output"):
         self.WIDTH = 250
 
         self.DISPLAY_STEERING_MIN = -1
@@ -26,6 +26,7 @@ class OutputVisualizer:
         self.HUE_RANGE = 60
 
         self.img = None
+        self.window_name = window_name
         self._clear()
         self.interpolator = Interpolator()
 
@@ -46,6 +47,61 @@ class OutputVisualizer:
                 Y.append(steering)
                 Z.append(self.interpolator.get_quality(np.array([throttle, steering])))
         return X, Y, Z
+
+    def _coord2px(self, value):
+        return int(min(max(value, 0), self.WIDTH - 1))
+
+    def _draw_output_2(self, output):
+        u = output[:, :2]
+        q = output[:, 2]
+
+        x = [action[1] for action in u]
+        y = [action[0] for action in u]
+
+        x_0 = min(x)
+        y_0 = min(y)
+
+        x_pixels_per_value = self.WIDTH / (max(x) - min(x))
+        y_pixels_per_value = self.WIDTH / (max(y) - min(y))
+
+        x_loc = [self._coord2px((x_value - x_0) * x_pixels_per_value) for x_value in x]
+        y_loc = [self._coord2px(self.WIDTH - (y_value - y_0) * y_pixels_per_value) for y_value in y]
+
+        x_values = sorted(set(x_loc))
+        y_values = sorted(set(y_loc))
+
+        x_start = dict(zip(x_values,
+                           [0] + [self._coord2px((x_values[i + 1] + x_values[i]) / 2)
+                                  for i in range(len(x_values) - 1)]))
+        y_start = dict(zip(y_values,
+                           [0] + [self._coord2px((y_values[i + 1] + y_values[i]) / 2)
+                                  for i in range(len(y_values) - 1)]))
+
+        x_stop = dict(zip(x_values,
+                          [self._coord2px((x_values[i + 1] + x_values[i]) / 2)
+                           for i in range(len(x_values) - 1)] + [self.WIDTH - 1]))
+        y_stop = dict(zip(y_values,
+                          [self._coord2px((y_values[i + 1] + y_values[i]) / 2)
+                           for i in range(len(y_values) - 1)] + [self.WIDTH - 1]))
+
+        q_0 = min(q + [0])
+
+        hue_per_value = self.HUE_RANGE / (max(q + [0]) - min(q + [0]))
+
+        for i in range(len(q)):
+            cv2.rectangle(self.img,
+                          (x_start[x_loc[i]], y_start[y_loc[i]]),
+                          (x_stop[x_loc[i]], y_stop[y_loc[i]]),
+                          color=tuple(map(int,
+                                          cv2.cvtColor(np.uint8([[[(q[i] - q_0) * hue_per_value, 255, 255]]]),
+                                                       cv2.COLOR_HSV2BGR)[0, 0])),
+                          thickness=-1)
+
+            cv2.circle(self.img,
+                       (x_loc[i], y_loc[i]),
+                       max(int(self.DISPLAY_THROTTLE_SEGMENT_WIDTH / 5), 1),
+                       (0, 0, 0),
+                       -1)
 
     def _draw_output(self, output):
         u = output[:, :2]
@@ -104,6 +160,6 @@ class OutputVisualizer:
 
     def render(self, output):
         self._clear()
-        self._draw_output(output)
-        cv2.imshow('output', self.img)
+        self._draw_output_2(output)
+        cv2.imshow(self.window_name, self.img)
         cv2.waitKey(40)

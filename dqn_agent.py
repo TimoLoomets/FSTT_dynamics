@@ -1,7 +1,8 @@
 from collections import deque
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, Activation, Flatten, Conv1D, MaxPooling1D
-from keras.optimizers import Adam
+from keras.optimizers import Adam, RMSprop
+import tensorflow as tf
 import time
 import random
 import numpy as np
@@ -15,9 +16,23 @@ from input_visualizer import InputVisualizer
 
 
 class DQNAgent:
-    def __init__(self):
+    def __init__(self, start_time):
         # Main model
         self.model = self.create_model()
+        if start_time is None:
+            self.start_time = time.time()
+        else:
+            self.start_time = start_time
+        tf.keras.utils.plot_model(
+            self.model,
+            to_file='logs/' + TRACK_FILE.split('.')[0] + '/'
+                    + str(round(self.start_time)) + "/model.png",
+            show_shapes=True,
+            show_layer_names=True,
+            rankdir="TB",
+            expand_nested=False,
+            dpi=96,
+        )
 
         # Target network
         self.target_model = self.create_model()
@@ -39,12 +54,13 @@ class DQNAgent:
     @staticmethod
     def create_model():
         model = Sequential()
-        model.add(Dense(32, activation='sigmoid', input_shape=INPUT_2D_SHAPE))
+        model.add(Dense(32, activation='relu', input_shape=INPUT_2D_SHAPE))
         model.add(Flatten())
-        model.add(Dense(128, activation='sigmoid'))
-        model.add(Dense(125, activation='sigmoid'))
+        for _ in range(7):
+            model.add(Dense(50, activation='relu'))
+        # model.add(Dense(125, activation='sigmoid'))
         model.add(Dense(OUTPUT_1D_SHAPE, activation='linear'))
-        model.compile(loss="mse", optimizer=Adam(lr=0.001), metrics=['accuracy'])
+        model.compile(loss=tf.keras.losses.Huber(), optimizer=RMSprop(lr=0.01), metrics=['accuracy']) # huber_loss
 
         '''
         model.add(Conv1D(256, 2,
@@ -84,8 +100,9 @@ class DQNAgent:
         return output
 
     def save_replay_memory(self):
-        df = pd.DataFrame([[d if type(d) != np.ndarray else d.tolist() for d in e] for e in self.replay_memory], columns=['State', 'Action', 'Reward', 'NextState', 'Done'])
-        df.to_csv('logs/' + TRACK_FILE.split('.')[0] + '/' + str(round(time.time())) + ".csv", index=False)
+        df = pd.DataFrame([[d if type(d) != np.ndarray else d.tolist() for d in e] for e in self.replay_memory],
+                          columns=['State', 'Action', 'Reward', 'NextState', 'Done'])
+        df.to_csv('logs/' + TRACK_FILE.split('.')[0] + '/' + str(round(self.start_time)) + "/data.csv", index=False)
 
     # Trains main network every step during episode
     def train(self, terminal_state):
@@ -93,8 +110,22 @@ class DQNAgent:
         if len(self.replay_memory) < MIN_REPLAY_MEMORY_SIZE:
             return
 
+        # Calculate Prioritized Experience Replay weights
+        current_states = np.array([transition[0] for transition in self.replay_memory])
+        future_states = np.array([transition[3] for transition in self.replay_memory])
+        current_qs = self.model.predict(current_states)
+        future_qs = self.target_model.predict(future_states)
+        p = np.array([abs((reward + DISCOUNT * np.amax(future_qs[index]) if not done else reward)
+                          - current_qs[index][ACTIONS.index(action)])
+                      for index, (_, action, reward, _, done) in enumerate(self.replay_memory)])
+        p = np.interp(p, (p.min(), p.max()), (0, +1))
+        p /= np.sum(p)
+
         # Get a minibatch of random samples from memory replay table
-        minibatch = random.sample(self.replay_memory, MINIBATCH_SIZE)
+        minibatch = np.array(self.replay_memory)[np.random.choice(len(self.replay_memory),
+                                                                  size=MINIBATCH_SIZE,
+                                                                  replace=False,
+                                                                  p=p)]  # random.sample(self.replay_memory, MINIBATCH_SIZE)
 
         # Get current states from minibatch, then query NN model for Q values
         current_states = np.array([transition[0] for transition in minibatch])  # / 255
@@ -103,7 +134,8 @@ class DQNAgent:
         # Get future states from minibatch, then query NN model for Q values
         # When using target network, query it, otherwise main network should be queried
         new_current_states = np.array([transition[3] for transition in minibatch])  # / 255
-        future_qs_list = self.target_model.predict(new_current_states)
+        future_target_qs_list = self.target_model.predict(new_current_states)
+        future_model_qs_list = self.model.predict(new_current_states)
 
         x = []
         y = []
@@ -114,10 +146,11 @@ class DQNAgent:
 
             # If not a terminal state, get new q from future states, otherwise set it to 0
             # almost like with Q Learning, but we use just part of equation here
-            future_qs_list_at_index = future_qs_list[index]
-            future_qs = np.reshape(future_qs_list_at_index, OUTPUT_2D_SHAPE)
+            future_model_qs_at_index = future_model_qs_list[index]
+            future_target_qs_at_index = future_target_qs_list[index]
+            # future_qs = np.reshape(future_model_qs_at_index, OUTPUT_2D_SHAPE)
             if not done:
-                max_future_q = np.max(future_qs)
+                max_future_q = future_target_qs_at_index[np.argmax(future_model_qs_at_index)]
                 new_q = reward + DISCOUNT * max_future_q
             else:
                 new_q = reward
@@ -157,5 +190,7 @@ class DQNAgent:
         # If counter reaches set value, update target network with weights of main network
         if self.target_update_counter > UPDATE_TARGET_EVERY:
             self.target_model.set_weights(self.model.get_weights())
+            # a = self.model.get_weights()
+            # print(a)
             self.target_update_counter = 0
             self.save_replay_memory()

@@ -108,12 +108,13 @@ class FSEnv:
     def check_checkpoints(self):
         corners = self.car.get_corners()
         area = self.car.area
-        for i in range(min(2, len(self.checkpoints))):
+        for i in range(len(self.checkpoints)):  # min(2, len(self.checkpoints))):
             if self.point_in_circle(self.checkpoints[i],
                                     (self.car.x, self.car.y),
-                                    2):
-                for j in range(i + 1):
-                    self.checkpoints.popleft()
+                                    1):
+                self.checkpoints.remove(self.checkpoints[i])
+                # for j in range(i + 1):
+                #    self.checkpoints.popleft()
                 return True
         return False
 
@@ -180,22 +181,25 @@ class FSEnv:
         steering = action[1]  # (action // 20 - 10) / 10.0
         self.car.update(self.TIME_STEP, (throttle, steering))
 
+        new_observation = self.get_observations()
         if self.check_track():
             reward = -self.OOB_PENALTY
             self.reset()
         elif self.check_checkpoints():
             reward = self.CHECKPOINT_REWARD
             # print("HIT CHECKPOINT")
+        elif self.last_speed_was_zero and action[0] <= 0:
+            reward = -100
+            #print("STANDING STILL")
         else:
-            reward = -self.STEP_PENALTY  # self.car.linear_speed_value / 2
-
-        new_observation = self.get_observations()
+            reward = -0.1 * (new_observation[1][0] ** 2
+                             + new_observation[1][1] ** 2)  # -self.STEP_PENALTY  # self.car.linear_speed_value / 2
 
         done = False
         if reward == -self.OOB_PENALTY \
                 or self.episode_step >= EPISODE_LENGTH \
                 or len(self.checkpoints) == 0 \
-                or (self.last_speed_was_zero and self.car.speed == 0):
+                or (self.last_speed_was_zero and action[0] <= 0):
             done = True
 
         if self.car.speed == 0:

@@ -17,7 +17,8 @@ if __name__ == "__main__":
     # tf.device('/gpu:0')
     # tf.compat.v1.disable_eager_execution()
 
-    data = pd.read_csv('logs/' + 'single_point/1591716449.csv')
+    data = pd.read_csv('logs/' + 'FSG/1592212832.csv')
+    #data = data.iloc[::-1]
     data_size = len(data)
     data_generator = data.iterrows()
 
@@ -100,9 +101,9 @@ if __name__ == "__main__":
     # for _ in range(10):
     model.fit(np.array(train_x), np.array(train_y),
               batch_size=64,
-              epochs=100,
+              epochs=3,
               callbacks=[MyCustomCallback()])
-    model.save('models/__' + TRACK_FILE.split('.')[0] + '_night_' + str(round(time.time())) + '.model')
+    model.save('models/__' + TRACK_FILE.split('.')[0] + '_trained_' + str(round(time.time())) + '.model')
     # end = time.time()
     # print(end - start)
     # print(len(eval_data_list))
