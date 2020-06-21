@@ -8,7 +8,7 @@ from constants import *
 
 from collections import deque
 
-model = load_model("models/__FSG_1592513798.7846544.model")
+model = load_model("logs/FSG/1592749239/checkpoint.model")
 model.summary()
 for layer in model.layers:
     print(layer.input_shape, "=>", layer.output_shape)
