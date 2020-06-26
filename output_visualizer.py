@@ -61,8 +61,8 @@ class OutputVisualizer:
         x_0 = min(x)
         y_0 = min(y)
 
-        x_pixels_per_value = self.WIDTH / (max(x) - min(x))
-        y_pixels_per_value = self.WIDTH / (max(y) - min(y))
+        x_pixels_per_value = self.WIDTH / (max(x) - min(x)) if max(x) != min(x) else 0
+        y_pixels_per_value = self.WIDTH / (max(y) - min(y)) if max(y) != min(y) else 0
 
         x_loc = [self._coord2px((x_value - x_0) * x_pixels_per_value) for x_value in x]
         y_loc = [self._coord2px(self.WIDTH - (y_value - y_0) * y_pixels_per_value) for y_value in y]

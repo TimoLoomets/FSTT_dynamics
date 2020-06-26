@@ -5,9 +5,10 @@ import yaml
 from os import path
 from random import random
 
-from car import Car
+# from car import Car
 from constants import *
 from cone_filter_sorter_node import ConeFilterNode
+from simple_car import SimpleCar
 from simulator_visualizer import SimulatorVisualizer
 
 
@@ -33,11 +34,14 @@ class FSEnv:
         self.checkpoints = deque()
         self.visualizer = SimulatorVisualizer()
         self.last_speed_was_zero = False
+        self.consecutive_successes = 0
+        self.track_index = 0
 
         self.load_track()
         self.mutate_track(MUTATION_RANGE)
-        self.car = Car(self.track["starting_pose_front_wing"][0], self.track["starting_pose_front_wing"][1],
-                       self.track["starting_pose_front_wing"][2] + pi / 2)
+        self.car = SimpleCar(self.track["starting_pose_front_wing"][0],
+                             self.track["starting_pose_front_wing"][1],
+                             self.track["starting_pose_front_wing"][2] + pi / 2)
         self.calculate_center_line()
 
         self.reset()
@@ -119,9 +123,14 @@ class FSEnv:
         return False
 
     def load_track(self):
-        self.track = yaml.load(open(path.join('tracks', TRACK_FILE), 'r'), Loader=yaml.FullLoader)
+        self.track = yaml.load(open(path.join('tracks', TRACK_FILES[self.track_index]), 'r'), Loader=yaml.FullLoader)
         self.active_track = self.track.copy()
         print(self.track)
+
+    def next_track(self):
+        self.track_index += 1
+        self.load_track()
+        self.reset()
 
     def mutate_track(self, move_range):
         self.active_track['cones_left'] = [[cone[0] + move_range * 2 * (random() - 0.5),
@@ -148,9 +157,9 @@ class FSEnv:
     def reset(self):
         self.mutate_track(MUTATION_RANGE)
         self.calculate_center_line()
-        self.car = Car(self.active_track["starting_pose_front_wing"][0],
-                       self.active_track["starting_pose_front_wing"][1],
-                       self.active_track["starting_pose_front_wing"][2] - pi / 2)
+        self.car = SimpleCar(self.active_track["starting_pose_front_wing"][0],
+                             self.active_track["starting_pose_front_wing"][1],
+                             self.active_track["starting_pose_front_wing"][2] - pi / 2)
         self.checkpoints = deque(self.center_points)
         self.episode_step = 0
         self.last_speed_was_zero = False
@@ -177,23 +186,29 @@ class FSEnv:
 
     def step(self, action, visualize=False):
         self.episode_step += 1
-        throttle = action[0]  # (action % 20 - 10) / 10.0
-        steering = action[1]  # (action // 20 - 10) / 10.0
-        self.car.update(self.TIME_STEP, (throttle, steering))
+        # throttle = action[0]  # (action % 20 - 10) / 10.0
+        steering = action  # [1]  # (action // 20 - 10) / 10.0
+        self.car.update(self.TIME_STEP, steering)  # (throttle, steering))
 
         new_observation = self.get_observations()
         if self.check_track():
             reward = -self.OOB_PENALTY
             self.reset()
+            self.consecutive_successes = 0
         elif self.check_checkpoints():
             reward = self.CHECKPOINT_REWARD
             # print("HIT CHECKPOINT")
         elif self.last_speed_was_zero and action[0] <= 0:
             reward = -100
-            #print("STANDING STILL")
+            self.reset()
+            self.consecutive_successes = 0
+            # print("STANDING STILL")
         else:
             reward = -0.1 * (new_observation[1][0] ** 2
                              + new_observation[1][1] ** 2)  # -self.STEP_PENALTY  # self.car.linear_speed_value / 2
+
+        if len(self.checkpoints) == 0:
+            self.consecutive_successes += 1
 
         done = False
         if reward == -self.OOB_PENALTY \

@@ -61,9 +61,10 @@ class DQNAgent:
         # model.add(Dense(125, activation='sigmoid'))
         model.add(Dense(OUTPUT_1D_SHAPE, activation='linear'))
         model.compile(loss=tf.keras.losses.Huber(),
-                      optimizer=RMSprop(lr=0.001,
-                                        rho=0.5),
+                      optimizer='Adam',
                       metrics=['accuracy'])  # huber_loss
+        # RMSprop(lr=0.001,
+        #        rho=0.5),
 
         '''
         model.add(Conv1D(256, 2,

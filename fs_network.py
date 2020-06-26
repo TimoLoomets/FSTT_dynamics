@@ -51,6 +51,7 @@ if __name__ == "__main__":
         makedirs('logs/' + TRACK_FILE.split('.')[0] + f"/{round(start_time)}")
 
     agent = DQNAgent(start_time)
+    max_successes = 0
 
     for episode in tqdm(range(1, EPISODES + 1), ascii=True, unit='episodes'):
         # Update tensorboard step every episode
@@ -98,6 +99,8 @@ if __name__ == "__main__":
             current_state = new_state
             step += 1
 
+        max_successes = max(max_successes, env.consecutive_successes)
+
         ep_rewards.append(episode_reward)
         ep_frequencies.append(episode_frequencies)
         if not episode % AGGREGATE_STATS_EVERY or episode == 1:
@@ -106,6 +109,11 @@ if __name__ == "__main__":
             max_reward = max(ep_rewards[-AGGREGATE_STATS_EVERY:])
             agent.tensorboard.update_stats(reward_avg=average_reward, reward_min=min_reward, reward_max=max_reward,
                                            epsilon=epsilon)
+
+            print("max successes:", max_successes)
+            if max_successes >= SUCCESS_THRESHOLD:
+                env.next_track()
+            max_successes = 0
 
             if episode > 10:  # -50 < average_reward < 50 and -50 < max_reward < 50 or episode > 100:
                 tracked_rewards.append((min_reward, average_reward, max_reward))
