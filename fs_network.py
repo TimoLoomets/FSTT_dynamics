@@ -53,8 +53,13 @@ if __name__ == "__main__":
     agent = DQNAgent(start_time)
     max_successes = 0
 
-    for episode in tqdm(range(1, EPISODES + 1), ascii=True, unit='episodes'):
+    episode_index = 0
+    total_episodes = EPISODES
+    episodes = tqdm(range(1, total_episodes + 1), ascii=True, unit='episodes')
+    # for episode in tqdm(range(1, EPISODES + 1), ascii=True, unit='episodes'):
+    while episode_index < total_episodes:
         # Update tensorboard step every episode
+        episode = episodes[episode_index]
         agent.tensorboard.step = episode
 
         # Restarting episode - reset episode reward and step number
@@ -156,6 +161,12 @@ if __name__ == "__main__":
             print("epsilon: ", epsilon)
             # if average_reward >= MIN_REWARD:
             agent.model.save(f'logs/{TRACK_FILE.split(".")[0]}/{round(start_time)}/checkpoint.model')
+
+        if total_episodes - episode_index < 2 * UPDATE_TARGET_EVERY \
+                and epsilon > MIN_EPSILON:
+            total_episodes += 2 * UPDATE_TARGET_EVERY
+            episodes = tqdm(range(1, total_episodes + 1), ascii=True, unit='episodes')
+        episode_index += 1
 
     agent.model.save('logs/' + TRACK_FILE.split('.')[0] + f"/{round(start_time)}" + 'final.model')
     agent.save_replay_memory()
