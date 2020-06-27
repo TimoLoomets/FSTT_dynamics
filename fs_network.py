@@ -132,15 +132,15 @@ if __name__ == "__main__":
                 plt.plot()
                 plt.pause(0.001)
 
-                recent_visualizer.render(np.array([list(frequency[0]) + [frequency[1]]
-                                                   for frequency in
-                                                   reduce(lambda x, y: {k: x.get(k, 0) + y.get(k, 0)
-                                                                        for k in set(x) | set(y)},
-                                                          ep_frequencies).items()]))  # list(ep_frequencies)
+                #recent_visualizer.render(np.array([list(frequency[0]) + [frequency[1]]
+                #                                   for frequency in
+                #                                   reduce(lambda x, y: {k: x.get(k, 0) + y.get(k, 0)
+                #                                                        for k in set(x) | set(y)},
+                #                                          ep_frequencies).items()]))  # list(ep_frequencies)
                 # {k: x.get(k, 0) + y.get(k, 0) for k in set(x) | set(y)}
 
-                output_visualizer.render(np.array([list(frequency[0]) + [frequency[1]]
-                                                   for frequency in frequencies.items()]))
+                #output_visualizer.render(np.array([list(frequency[0]) + [frequency[1]]
+                #                                   for frequency in frequencies.items()]))
 
             # Save model, but only when min reward is greater or equal a set value
             print()

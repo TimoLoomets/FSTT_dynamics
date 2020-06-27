@@ -31,7 +31,7 @@ class DQNAgent:
             show_layer_names=True,
             rankdir="TB",
             expand_nested=False,
-            dpi=96,
+            dpi=96
         )
 
         # Target network

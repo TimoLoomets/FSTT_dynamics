@@ -8,4 +8,4 @@ PyYAML~=5.3
 tensorflow-gpu>=2.0.0
 Pillow~=6.2.0
 pandas~=1.0.3
-pydot>=2.1.4
+pydot>=1.4.1
