@@ -128,7 +128,7 @@ class FSEnv:
         print(self.track)
 
     def next_track(self):
-        self.track_index += 1
+        self.track_index = min(self.track_index + 1, len(TRACK_FILES) - 1)
         self.load_track()
         self.reset()
 

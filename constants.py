@@ -9,7 +9,7 @@ MINIBATCH_SIZE = 1000  # How many steps (samples) to use for training
 UPDATE_TARGET_EVERY = 100  # Terminal states (end of episodes)
 MIN_REWARD = 5
 
-EPSILON_DECAY = 0.9925  # 0.999997  #
+EPSILON_DECAY = 0.999997 #0.9925  # 0.999997  #
 EPSILON_DECAYER = lambda x: -2 / (1 + math.e ** (-0.3 * x)) + 2
 MIN_EPSILON = 0.05
 MAX_EPSILON = 1

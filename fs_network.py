@@ -55,12 +55,13 @@ if __name__ == "__main__":
 
     episode_index = 0
     total_episodes = EPISODES
-    episodes = tqdm(range(1, total_episodes + 1), ascii=True, unit='episodes')
+    episodes = range(1, total_episodes + 1)#tqdm(range(1, total_episodes + 1), ascii=True, unit='episodes')
     # for episode in tqdm(range(1, EPISODES + 1), ascii=True, unit='episodes'):
     while episode_index < total_episodes:
         # Update tensorboard step every episode
         episode = episodes[episode_index]
         agent.tensorboard.step = episode
+        print(f'episode {episode}/{total_episodes}')
 
         # Restarting episode - reset episode reward and step number
         episode_reward = 0
@@ -165,7 +166,7 @@ if __name__ == "__main__":
         if total_episodes - episode_index < 2 * UPDATE_TARGET_EVERY \
                 and epsilon > MIN_EPSILON:
             total_episodes += 2 * UPDATE_TARGET_EVERY
-            episodes = tqdm(range(1, total_episodes + 1), ascii=True, unit='episodes')
+            episodes = range(1, total_episodes + 1)#tqdm(range(1, total_episodes + 1), ascii=True, unit='episodes', initial=episode)
         episode_index += 1
 
     agent.model.save('logs/' + TRACK_FILE.split('.')[0] + f"/{round(start_time)}" + 'final.model')
